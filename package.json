@@ -1,0 +1,9 @@
+{
+  "name": "weweb-zeiterfassung",
+  "version": "1.0.0",
+  "description": "WeWeb Coded Component – Zeiterfassung (Stunden erfassen, time_entries, HRklar)",
+  "private": true,
+  "scripts": { "build": "weweb build", "serve": "weweb serve" },
+  "devDependencies": { "@weweb/cli": "latest" },
+  "license": "UNLICENSED"
+}
