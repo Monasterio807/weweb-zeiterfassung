@@ -267,6 +267,19 @@ export default {
     this.loadEmployees();
   },
   methods: {
+    // fetch mit Timeout (AbortController) — bricht haengende Requests nach ms ab,
+    // damit Spinner nie ewig drehen. Abbruch landet als Fehler im jeweiligen catch.
+    async fetchWithTimeout(url, options, ms) {
+      const timeout = ms || 10000;
+      const ac = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timer = ac ? setTimeout(() => ac.abort(), timeout) : null;
+      try {
+        return await fetch(url, ac ? Object.assign({}, options, { signal: ac.signal }) : options);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    },
+
     emitEvent(name, payload) {
       this.$emit('trigger-event', { name, event: payload || {} });
     },
@@ -307,7 +320,7 @@ export default {
       }
       try {
         const url = `${this.baseUrl}/rest/v1/employees?select=id,firstname,lastname&order=lastname.asc`;
-        const res = await fetch(url, { headers: { ...this.authHeaders, Accept: 'application/json' } });
+        const res = await this.fetchWithTimeout(url, { headers: { ...this.authHeaders, Accept: 'application/json' } });
         if (res.status === 401 || res.status === 403) {
           this.authError = true;
           this.emitEvent('error', { reason: 'auth' });
@@ -363,7 +376,7 @@ export default {
       this.saving = true;
       this.saveResult = null;
       try {
-        const res = await fetch(`${this.baseUrl}/rest/v1/time_entries`, {
+        const res = await this.fetchWithTimeout(`${this.baseUrl}/rest/v1/time_entries`, {
           method: 'POST',
           headers: { ...this.authHeaders, 'Content-Type': 'application/json', Prefer: 'return=representation' },
           body: JSON.stringify(payload),
@@ -407,7 +420,7 @@ export default {
       this.monthSummary = null;
       try {
         const url = `${this.baseUrl}/rest/v1/time_entries_monthly?employee_id=eq.${encodeURIComponent(this.selectedEmployee)}&year_month=eq.${encodeURIComponent(this.viewMonth)}&select=worked_minutes,worked_hours,tage_anwesend,gross_minutes,eintraege_pause_nicht_konform`;
-        const res = await fetch(url, { headers: { ...this.authHeaders, Accept: 'application/json' } });
+        const res = await this.fetchWithTimeout(url, { headers: { ...this.authHeaders, Accept: 'application/json' } });
         if (!res.ok) return;
         const rows = await res.json().catch(() => []);
         if (Array.isArray(rows) && rows.length) this.monthSummary = rows[0];
@@ -421,7 +434,7 @@ export default {
       try {
         const monthStart = `${this.viewMonth}-01`;
         const url = `${this.baseUrl}/rest/v1/time_entries?employee_id=eq.${encodeURIComponent(this.selectedEmployee)}&work_date=gte.${monthStart}&order=work_date.desc&select=id,work_date,worked_minutes,break_minutes,gross_minutes,required_break_minutes,break_compliant,source`;
-        const res = await fetch(url, { headers: { ...this.authHeaders, Accept: 'application/json' } });
+        const res = await this.fetchWithTimeout(url, { headers: { ...this.authHeaders, Accept: 'application/json' } });
         if (!res.ok) return;
         const rows = await res.json().catch(() => []);
         // Nur Einträge des aktuellen Monats (work_date < nächster Monatserster ist
