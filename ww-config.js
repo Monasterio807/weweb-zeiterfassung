@@ -1,12 +1,12 @@
 export default {
   editor: {
-    label: { en: 'Time Tracking', de: 'Zeiterfassung' },
+    label: { en: 'Time Tracking (Week View)', de: 'Zeiterfassung (Wochenansicht)' },
     icon: 'clock',
   },
   triggerEvents: [
-    { name: 'loaded', label: { en: 'On loaded', de: 'Geladen' }, event: { count: 0 } },
-    { name: 'saved', label: { en: 'On entry saved', de: 'Eintrag gespeichert' }, event: { worked_minutes: 0, break_compliant: true } },
-    { name: 'error', label: { en: 'On error', de: 'Fehler' }, event: { reason: '' } },
+    { name: 'loaded',  label: { en: 'On loaded',       de: 'Geladen'           }, event: { count: 0 } },
+    { name: 'saved',   label: { en: 'On entry saved',  de: 'Eintrag gespeichert' }, event: { date: '', worked_minutes: 0 } },
+    { name: 'error',   label: { en: 'On error',        de: 'Fehler'            }, event: { reason: '' } },
   ],
   properties: {
     authToken: {
@@ -26,7 +26,7 @@ export default {
       bindable: true,
       defaultValue: '',
       /* wwEditor:start */
-      bindingValidation: { type: 'string', tooltip: 'Oeffentlicher Anon-/Publishable-Key. NIE der service_role-Key.' },
+      bindingValidation: { type: 'string', tooltip: 'Öffentlicher Anon-/Publishable-Key. NIE der service_role-Key.' },
       /* wwEditor:end */
     },
     supabaseUrl: {
@@ -36,37 +36,43 @@ export default {
       bindable: true,
       defaultValue: 'https://ztvqsxdudzdyqgeylujr.supabase.co',
       /* wwEditor:start */
-      bindingValidation: { type: 'string', tooltip: 'Projekt-URL. Default ist das HRklar-Projekt.' },
+      bindingValidation: { type: 'string', tooltip: 'Projekt-URL. Default ist das Imploya-Projekt (Zürich).' },
       /* wwEditor:end */
     },
     employeeId: {
-      label: { en: 'Preselect employee (UUID)', de: 'Mitarbeiter vorwaehlen (UUID)' },
+      label: { en: 'Preselect employee (UUID)', de: 'Mitarbeiter vorwählen (UUID)' },
       type: 'Text',
       section: 'settings',
       bindable: true,
       defaultValue: '',
       /* wwEditor:start */
-      bindingValidation: { type: 'string', tooltip: 'Optional. UUID des vorgewaehlten Mitarbeiters. Leer → Auswahl im Tool.' },
+      bindingValidation: { type: 'string', tooltip: 'Optional. UUID des vorgewählten Mitarbeiters. Leer → Auswahl im Widget.' },
       /* wwEditor:end */
     },
-    companyProfileId: {
-      label: { en: 'Company profile (UUID)', de: 'Betriebsprofil (UUID)' },
-      type: 'Text',
+    weekOffset: {
+      label: { en: 'Week offset (0 = current)', de: 'Wochenversatz (0 = aktuell)' },
+      type: 'Number',
       section: 'settings',
       bindable: true,
-      defaultValue: '',
+      defaultValue: 0,
       /* wwEditor:start */
-      bindingValidation: { type: 'string', tooltip: 'Optional. UUID des Betriebsprofils, wird beim Speichern mitgegeben.' },
+      bindingValidation: { type: 'number', tooltip: '0 = aktuelle Woche, -1 = letzte Woche, etc. Wird intern durch Navigation überschrieben.' },
       /* wwEditor:end */
+    },
+    readonly: {
+      label: { en: 'Read only', de: 'Nur lesen' },
+      type: 'OnOff',
+      section: 'settings',
+      defaultValue: false,
     },
     backUrl: {
-      label: { en: 'Back link', de: 'Zurueck-Link' },
+      label: { en: 'Back link', de: 'Zurück-Link' },
       type: 'Text',
       section: 'settings',
       bindable: true,
       defaultValue: '',
       /* wwEditor:start */
-      bindingValidation: { type: 'string', tooltip: 'Optionaler «Zurueck»-Link (z. B. /meine-dokumente). Leer → kein Button.' },
+      bindingValidation: { type: 'string', tooltip: 'Optionaler «Zurück»-Link. Leer → kein Button.' },
       /* wwEditor:end */
     },
   },
