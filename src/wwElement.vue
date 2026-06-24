@@ -658,7 +658,7 @@ export default {
 
 /* Inputs kompakt in Tabelle */
 .ze-input-time, .ze-input-small, .ze-input-note {
-  min-height: 38px; padding: var(--hrk-space-2);
+  min-height: var(--hrk-tap-min); padding: var(--hrk-space-2);
 }
 .ze-input-time  { width: 100%; max-width: 100px; }
 .ze-input-small { width: 72px; text-align: center; }
@@ -682,7 +682,7 @@ export default {
 
 /* Speichern-Button klein */
 .ze-save-btn {
-  min-height: 36px; padding: 0 var(--hrk-space-3);
+  min-height: var(--hrk-tap-min); padding: 0 var(--hrk-space-3);
   font-size: var(--hrk-fs-small);
 }
 .ze-action-cell { white-space: nowrap; }
