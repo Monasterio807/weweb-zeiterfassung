@@ -76,6 +76,23 @@
                 <!-- Tag -->
                 <td class="ze-day-cell">
                   <span class="ze-weekday">{{ day.weekday }}</span>
+                  <!-- Stempeluhr-Kennzeichnung (source='clock') -->
+                  <svg
+                    v-if="day.source === 'clock'"
+                    class="ze-src-clock"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    role="img"
+                    aria-label="Über die Stempeluhr erfasst"
+                  >
+                    <title>Über die Stempeluhr erfasst</title>
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15.5 14" />
+                  </svg>
                   <br>
                   <span class="hrk-small hrk-muted">{{ day.label }}</span>
                 </td>
@@ -117,6 +134,10 @@
                     @change="day.saved = false"
                     :aria-label="'Pause ' + day.weekday"
                   />
+                  <!-- Hinweis: Pause unter L-GAV-Minimum (Serverwert, generierte Spalte) -->
+                  <span v-if="day.breakCompliant === false" class="ze-pause-hint">
+                    unter Minimum ({{ day.requiredBreak }} Min)
+                  </span>
                 </td>
 
                 <!-- Netto (live berechnet) -->
@@ -357,6 +378,10 @@ export default {
           note:    '',
           entryId: null,
           workedMinutes: null,
+          // Stempeluhr-MVP (additiv): Serverwerte aus time_entries
+          source:         '',    // 'manual' | 'clock'
+          breakCompliant: null,  // false = Pause unter L-GAV-Minimum
+          requiredBreak:  null,  // Mindestpause in Minuten (generierte Spalte)
           saving:  false,
           saved:   false,
           error:   '',
@@ -386,7 +411,7 @@ export default {
           + `?employee_id=eq.${encodeURIComponent(this.selectedEmployee)}`
           + `&work_date=gte.${monday}&work_date=lte.${sunday}`
           + `&order=work_date.asc,created_at.asc`
-          + `&select=id,work_date,start_time,end_time,break_minutes,worked_minutes,note`;
+          + `&select=id,work_date,start_time,end_time,break_minutes,worked_minutes,note,gross_minutes,required_break_minutes,break_compliant,source`;
 
         const res = await this.fetchWithTimeout(url, { headers: { ...this.authHeaders, Accept: 'application/json' } });
         if (res.status === 401 || res.status === 403) { this.authError = true; return; }
@@ -410,6 +435,9 @@ export default {
             day.pause        = e.break_minutes || 0;
             day.note         = e.note || '';
             day.workedMinutes = e.worked_minutes || null;
+            day.source         = e.source || '';
+            day.breakCompliant = (typeof e.break_compliant === 'boolean') ? e.break_compliant : null;
+            day.requiredBreak  = (typeof e.required_break_minutes === 'number') ? e.required_break_minutes : null;
           }
         });
 
@@ -441,8 +469,10 @@ export default {
         end_time:      day.end   || null,
         break_minutes: day.pause || 0,
         note:          day.note  || null,
-        source:        'manual',
       };
+      // source nur bei NEUEN Eintraegen setzen — beim Bearbeiten bestehender
+      // Eintraege bleibt 'clock' (Stempeluhr) erhalten (additiv, Stempeluhr-MVP).
+      if (!day.entryId) payload.source = 'manual';
 
       try {
         let res;
@@ -529,12 +559,16 @@ export default {
       return '';
     },
     rowClass(day) {
+      const classes = [];
       const min = this.calcNetMin(day);
-      if (min === null || min <= 0) return '';
-      const h = min / 60;
-      if (h > 10) return 'ze-row--danger';
-      if (h < 4)  return 'ze-row--warning';
-      return '';
+      if (min !== null && min > 0) {
+        const h = min / 60;
+        if (h > 10)     classes.push('ze-row--danger');
+        else if (h < 4) classes.push('ze-row--warning');
+      }
+      // Stempeluhr-MVP (additiv): Pause unter L-GAV-Minimum markieren
+      if (day.breakCompliant === false) classes.push('ze-row--pause');
+      return classes.join(' ');
     },
   },
 };
@@ -668,8 +702,18 @@ export default {
 .ze-row--today td { background: var(--hrk-bordeaux-soft); }
 
 /* Farbcodierung Zeilen */
+/* Stempeluhr-MVP (additiv): Pause unter L-GAV-Minimum — steht VOR warning/danger,
+   damit extreme Netto-Zeiten (rot) die Markierung uebersteuern koennen. */
+.ze-row--pause   td:first-child { border-left: 3px solid var(--hrk-warning); }
 .ze-row--warning td:first-child { border-left: 3px solid var(--hrk-warning); }
 .ze-row--danger  td:first-child { border-left: 3px solid var(--hrk-danger);  }
+
+/* Hinweis unter dem Pause-Feld + Stempeluhr-Icon in der Tageszelle */
+.ze-pause-hint { display: block; margin-top: var(--hrk-space-1);
+  color: var(--hrk-warning); font-size: var(--hrk-fs-small); font-weight: var(--hrk-fw-medium);
+  white-space: nowrap; }
+.ze-src-clock { width: 14px; height: 14px; margin-left: var(--hrk-space-1);
+  vertical-align: -2px; color: var(--hrk-text-muted); }
 
 /* Netto-Wert Farbe */
 .ze-net-cell { font-weight: var(--hrk-fw-semibold); font-variant-numeric: tabular-nums; }
