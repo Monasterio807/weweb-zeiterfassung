@@ -241,12 +241,12 @@ export default {
 
   computed: {
     baseUrl() {
-      let url = (this.content && this.content.supabaseUrl) || 'https://ztvqsxdudzdyqgeylujr.supabase.co';
-      if (/nemxnflngcfrpamkuesm/.test(String(url))) url = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
+      let url = (this.content && this.content.supabaseUrl) || '';
+      if (/nemxnflngcfrpamkuesm/.test(String(url))) url = '';
       return String(url).replace(/\/+$/, '');
     },
     authHeaders() {
-      const key   = (this.content && 'sb_publishable_4rsRb_VB3l_45JO7sw0VSA_ODDS4CZc') || '';
+      const key   = (this.content && this.content.apiKey) || '';
       const token = String((this.content && this.content.authToken) || '');
       const bearer = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
       return { apikey: key, Authorization: bearer };
@@ -309,7 +309,7 @@ export default {
     // ── Initialisierung ──────────────────────────────────────────
     init() {
       this.authError = false;
-      if (!(this.content && 'sb_publishable_4rsRb_VB3l_45JO7sw0VSA_ODDS4CZc') || !(this.content && this.content.authToken)) {
+      if (!(this.content && this.content.apiKey) || !(this.content && this.content.authToken)) {
         this.authError = true;
         this.emit('error', { reason: 'auth' });
         return;
