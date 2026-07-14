@@ -14,7 +14,7 @@
       </div>
 
       <!-- Auth-Fehler -->
-      <div v-if="authError" class="hrk-state">
+      <div v-if="authError" class="hrk-state" role="alert">
         <div class="hrk-state__icon" aria-hidden="true">🔒</div>
         <p class="hrk-state__title">Bitte neu anmelden</p>
         <p class="hrk-muted">Damit du Stunden erfassen kannst, meld dich bitte wieder an.</p>
@@ -161,7 +161,7 @@
 
                 <!-- Speichern -->
                 <td v-if="!readonly" class="ze-action-cell">
-                  <div v-if="day.error" class="ze-row-error hrk-small" style="color: var(--hrk-danger)">⚠ {{ day.error }}</div>
+                  <div v-if="day.error" class="ze-row-error hrk-small" style="color: var(--hrk-danger)" role="alert">⚠ {{ day.error }}</div>
                   <button
                     v-else
                     type="button"
