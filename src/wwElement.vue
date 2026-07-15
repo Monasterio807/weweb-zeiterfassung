@@ -618,6 +618,7 @@ export default {
 /* ── Basis ── */
 .hrk-root, .hrk-root * { box-sizing: border-box; }
 .hrk-root {
+  width: 100%; box-sizing: border-box;  /* Audit-Fix: fuellt die Sektion, .hrk-page zentriert wieder */
   font-family: var(--hrk-font-body); font-size: var(--hrk-fs-body);
   line-height: var(--hrk-lh-body); color: var(--hrk-text);
   background: var(--hrk-creme); -webkit-font-smoothing: antialiased;
