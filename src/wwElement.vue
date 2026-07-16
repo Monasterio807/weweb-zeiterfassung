@@ -583,6 +583,7 @@ export default {
   --hrk-creme:           #FBF8F3;
   --hrk-anthrazit:       #2B2B2B;
   --hrk-gold:            #C9A24B;
+  --hrk-on-primary:      #FFFFFF;  /* Text/Icons auf primaer (Bordeaux) gefaerbten Flaechen */
   --hrk-surface:         #FFFFFF;
   --hrk-surface-muted:   #F5F1EB;
   --hrk-border:          #ECE5D9;
