@@ -134,9 +134,9 @@
                     @change="day.saved = false"
                     :aria-label="'Pause ' + day.weekday"
                   />
-                  <!-- Hinweis: Pause unter L-GAV-Minimum (Serverwert, generierte Spalte) -->
+                  <!-- Hinweis: Pause unter dem Pausen-Minimum (Serverwert, generierte Spalte; Label je Branche) -->
                   <span v-if="day.breakCompliant === false" class="ze-pause-hint">
-                    unter Minimum ({{ day.requiredBreak }} Min)
+                    {{ pauseHintText(day) }}
                   </span>
                 </td>
 
@@ -224,6 +224,10 @@ export default {
       // Auth
       authError: false,
 
+      // Branche des Betriebs — NUR fuer Anzeige-Texte (Label des Pausen-Minimums).
+      // Leer/nicht ladbar = heutiges (Gastro-)Verhalten; verbindlich rechnet der Server.
+      branche: '',
+
       // Mitarbeiter
       empLoading:       false,
       employees:        [],
@@ -282,6 +286,12 @@ export default {
     },
     readonly() {
       return !!(this.content && this.content.readonly);
+    },
+    // Nur wenn die Branche EXPLIZIT geladen und nicht 'gastro' ist, weicht ein
+    // Anzeige-Text ab. Unbekannt/leer bleibt beim heutigen Gastro-Text.
+    istNichtGastro() {
+      const b = String(this.branche || '').trim().toLowerCase();
+      return !!b && b !== 'gastro';
     },
     weekLabel() {
       if (!this.weekDays.length) return '';
@@ -383,12 +393,30 @@ export default {
         this.emit('error', { reason: 'auth' });
         return;
       }
+      this.loadBranche();
       if (this.propEmployeeId) {
         this.selectedEmployee = this.propEmployeeId;
         this.loadWeek();
       } else {
         this.loadEmployees();
       }
+    },
+
+    // ── Branche (nur Anzeige-Texte) ──────────────────────────────
+    // Liest company_profiles.branche (RLS = eigener Betrieb). Schlaegt das fehl
+    // oder ist die Branche leer, bleibt still das heutige Gastro-Label stehen —
+    // reine Anzeige-Degradation. Die verbindliche Pausen-Pruefung kommt vom
+    // Server (break_compliant / required_break_minutes), hier wird nichts gerechnet.
+    async loadBranche() {
+      if (this.branche) return; // idempotent — init() laeuft auch bei Token-Wechsel
+      try {
+        const url = `${this.baseUrl}/rest/v1/company_profiles?select=branche&limit=1`;
+        const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
+        if (!res || !res.ok) return;
+        const rows = await res.json().catch(() => []);
+        const b = (Array.isArray(rows) && rows[0] && rows[0].branche) ? String(rows[0].branche).trim() : '';
+        if (b) this.branche = b;
+      } catch (e) { /* Anzeige-Degradation — kein Fehlerzustand */ }
     },
 
     // ── Mitarbeiterliste ─────────────────────────────────────────
@@ -449,7 +477,7 @@ export default {
           workedMinutes: null,
           // Stempeluhr-MVP (additiv): Serverwerte aus time_entries
           source:         '',    // 'manual' | 'clock'
-          breakCompliant: null,  // false = Pause unter L-GAV-Minimum
+          breakCompliant: null,  // false = Pause unter dem Pausen-Minimum (Serverwert)
           requiredBreak:  null,  // Mindestpause in Minuten (generierte Spalte)
           saving:  false,
           saved:   false,
@@ -627,6 +655,15 @@ export default {
       if (h < 4)  return 'ze-net--warning';
       return '';
     },
+    // Label des Pausen-Hinweises je Rechtsrahmen (datengetrieben):
+    // Gastro und unbekannt/degradiert = EXAKT der bisherige Text, Ziffer fuer
+    // Ziffer. Andere Branchen = neutrale Formulierung — dahinter steht kein
+    // L-GAV, und Rechtswerte werden hier keine erfunden (Zahl kommt vom Server).
+    pauseHintText(day) {
+      const req = (day && day.requiredBreak != null) ? day.requiredBreak : '';
+      if (this.istNichtGastro) return `unter dem Minimum (${req} Min)`;
+      return `unter Minimum (${req} Min)`;
+    },
     rowClass(day) {
       const classes = [];
       const min = this.calcNetMin(day);
@@ -635,7 +672,7 @@ export default {
         if (h > 10)     classes.push('ze-row--danger');
         else if (h < 4) classes.push('ze-row--warning');
       }
-      // Stempeluhr-MVP (additiv): Pause unter L-GAV-Minimum markieren
+      // Stempeluhr-MVP (additiv): Pause unter dem Pausen-Minimum markieren
       if (day.breakCompliant === false) classes.push('ze-row--pause');
       return classes.join(' ');
     },
@@ -773,7 +810,7 @@ export default {
 .ze-row--today td { background: var(--hrk-bordeaux-soft); }
 
 /* Farbcodierung Zeilen */
-/* Stempeluhr-MVP (additiv): Pause unter L-GAV-Minimum — steht VOR warning/danger,
+/* Stempeluhr-MVP (additiv): Pause unter dem Pausen-Minimum — steht VOR warning/danger,
    damit extreme Netto-Zeiten (rot) die Markierung uebersteuern koennen. */
 .ze-row--pause   td:first-child { border-left: 3px solid var(--hrk-warning); }
 .ze-row--warning td:first-child { border-left: 3px solid var(--hrk-warning); }
