@@ -245,8 +245,8 @@ export default {
 
   computed: {
     baseUrl() {
-      let url = (this.content && this.content.supabaseUrl) || '';
-      if (/nemxnflngcfrpamkuesm/.test(String(url))) url = '';
+      let url = (this.content && this.content.supabaseUrl) || 'https://ztvqsxdudzdyqgeylujr.supabase.co';
+      if (/nemxnflngcfrpamkuesm/.test(String(url))) url = 'https://ztvqsxdudzdyqgeylujr.supabase.co';
       return String(url).replace(/\/+$/, '');
     },
     // Token LIVE lesen: zuerst Property (WeWeb-Binding), sonst WeWeb-Auth-Kontext,
