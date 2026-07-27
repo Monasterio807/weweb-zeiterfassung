@@ -7,6 +7,7 @@ export default {
     { name: 'loaded',  label: { en: 'On loaded',       de: 'Geladen'           }, event: { count: 0 } },
     { name: 'saved',   label: { en: 'On entry saved',  de: 'Eintrag gespeichert' }, event: { date: '', worked_minutes: 0 } },
     { name: 'error',   label: { en: 'On error',        de: 'Fehler'            }, event: { reason: '' } },
+    { name: 'addon-blocked', label: { en: 'Addon not booked', de: 'Zusatzmodul nicht gebucht' }, event: {} },
   ],
   properties: {
     authToken: {
@@ -64,6 +65,16 @@ export default {
       type: 'OnOff',
       section: 'settings',
       defaultValue: false,
+    },
+    aboUrl: {
+      label: { en: 'Subscription page link', de: 'Abo-Seite (Link)' },
+      type: 'Text',
+      section: 'settings',
+      bindable: true,
+      defaultValue: '/abo',
+      /* wwEditor:start */
+      bindingValidation: { type: 'string', tooltip: 'Ziel des «Zum Abo»-Buttons im Zusatzmodul-Hinweis. Default /abo.' },
+      /* wwEditor:end */
     },
     backUrl: {
       label: { en: 'Back link', de: 'Zurück-Link' },

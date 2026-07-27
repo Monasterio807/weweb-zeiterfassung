@@ -21,6 +21,17 @@
       </div>
 
       <template v-else>
+        <!-- Zusatzmodul-Hinweis: Bestand bleibt editierbar, nur neue Einträge gesperrt -->
+        <div v-if="addonChecked && !addonAllowed" class="hrk-note hrk-note--warn ze-addon-note" role="status">
+          <p class="ze-addon-title">Zeiterfassung ist ein Zusatzmodul</p>
+          <p class="ze-addon-text">
+            Dein Abo enthält die Zeiterfassung im Moment nicht. Bestehende Einträge kannst du
+            weiterhin ansehen und anpassen — für neue Einträge schaltest du das Modul im
+            Abo-Bereich frei.
+          </p>
+          <a class="hrk-btn hrk-btn--primary ze-addon-cta" :href="aboUrl">Zum Abo</a>
+        </div>
+
         <!-- Mitarbeiter-Auswahl (nur wenn employeeId nicht per Prop gesetzt) -->
         <div v-if="!propEmployeeId" class="hrk-card" style="margin-bottom: var(--hrk-space-4)">
           <div class="hrk-field" style="margin-bottom: 0">
@@ -224,6 +235,11 @@ export default {
       // Auth
       authError: false,
 
+      // Zusatzmodul-Gate (has_addon_access): fail-open — bei Netzfehler kein
+      // Banner, die RESTRICTIVE INSERT-Policy bleibt die echte Sperre.
+      addonChecked: false,
+      addonAllowed: true,
+
       // Branche des Betriebs — NUR fuer Anzeige-Texte (Label des Pausen-Minimums).
       // Leer/nicht ladbar = heutiges (Gastro-)Verhalten; verbindlich rechnet der Server.
       branche: '',
@@ -286,6 +302,9 @@ export default {
     },
     readonly() {
       return !!(this.content && this.content.readonly);
+    },
+    aboUrl() {
+      return String((this.content && this.content.aboUrl) || '/abo');
     },
     // Nur wenn die Branche EXPLIZIT geladen und nicht 'gastro' ist, weicht ein
     // Anzeige-Text ab. Unbekannt/leer bleibt beim heutigen Gastro-Text.
@@ -394,6 +413,7 @@ export default {
         return;
       }
       this.loadBranche();
+      this.checkAddonAccess();
       if (this.propEmployeeId) {
         this.selectedEmployee = this.propEmployeeId;
         this.loadWeek();
@@ -417,6 +437,44 @@ export default {
         const b = (Array.isArray(rows) && rows[0] && rows[0].branche) ? String(rows[0].branche).trim() : '';
         if (b) this.branche = b;
       } catch (e) { /* Anzeige-Degradation — kein Fehlerzustand */ }
+    },
+
+    // ── Zusatzmodul-Gate (has_addon_access) ──────────────────────
+    // User-ID aus dem JWT-sub-Claim (kein zusaetzlicher Request). Defensiv:
+    // jeder Fehler liefert '' und laesst das Gate fail-open.
+    _jwtSub() {
+      try {
+        const t = this.tokenRaw;
+        if (!t) return '';
+        const seg = String(t).replace(/^Bearer\s+/i, '').split('.')[1];
+        if (!seg) return '';
+        const b64 = seg.replace(/-/g, '+').replace(/_/g, '/');
+        const win = (typeof wwLib !== 'undefined' && wwLib.getFrontWindow) ? wwLib.getFrontWindow() : (typeof window !== 'undefined' ? window : null);
+        const dec = (win && win.atob) ? win.atob(b64) : (typeof atob !== 'undefined' ? atob(b64) : '');
+        if (!dec) return '';
+        const payload = JSON.parse(dec);
+        return String((payload && payload.sub) || '');
+      } catch (e) { return ''; }
+    },
+    // Fragt den serverseitigen Gate-Entscheid ab (SECURITY DEFINER-RPC,
+    // beruecksichtigt den Kill-Switch system/addon_enforcement selbst).
+    // false = Banner + neue Eintraege gesperrt; Bestand bleibt editierbar.
+    async checkAddonAccess() {
+      const uid = this._jwtSub();
+      if (!uid) { this.addonChecked = true; return; }
+      try {
+        const res = await this.authedFetch(`${this.baseUrl}/rest/v1/rpc/has_addon_access`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body:    JSON.stringify({ p_user_id: uid, p_addon_key: 'zeiterfassung' }),
+        });
+        if (res && res.ok) {
+          const allowed = await res.json().catch(() => true);
+          this.addonAllowed = allowed !== false;
+          if (!this.addonAllowed) this.emit('addon-blocked', {});
+        }
+      } catch (e) { /* fail-open — Server-RLS bleibt massgeblich */ }
+      finally { this.addonChecked = true; }
     },
 
     // ── Mitarbeiterliste ─────────────────────────────────────────
@@ -550,7 +608,9 @@ export default {
 
     // ── Speichern ────────────────────────────────────────────────
     canSave(day) {
-      // Speichern erlaubt wenn Start gesetzt — Server berechnet Netto
+      // Speichern erlaubt wenn Start gesetzt — Server berechnet Netto.
+      // Ohne Zusatzmodul sind NEUE Eintraege gesperrt (Bestand = PATCH bleibt frei).
+      if (!day.entryId && !this.addonAllowed) return false;
       return !!day.start;
     },
     async saveDay(day) {
@@ -595,7 +655,17 @@ export default {
           );
         }
 
-        if (res.status === 401 || res.status === 403) { this.authError = true; return; }
+        if (res.status === 401) { this.authError = true; return; }
+        if (res.status === 403) {
+          // 403 beim ANLEGEN kann die Zusatzmodul-RLS sein — erst Gate re-checken,
+          // damit kein irrefuehrendes «Bitte neu anmelden» erscheint.
+          if (!day.entryId) {
+            await this.checkAddonAccess();
+            if (!this.addonAllowed) { this.emit('error', { reason: 'addon' }); return; }
+          }
+          this.authError = true;
+          return;
+        }
         if (!res.ok) {
           day.error = 'Speichern fehlgeschlagen – bitte nochmal versuchen.';
           this.emit('error', { reason: 'save' });
@@ -775,6 +845,13 @@ export default {
 .hrk-record-head__main { flex: 1 1 14rem; min-width: 0; }
 .hrk-note { border-left: 4px solid var(--hrk-info); background: var(--hrk-info-bg); padding: var(--hrk-space-3) var(--hrk-space-4); border-radius: var(--hrk-radius-sm); }
 .hrk-note--danger { border-left-color: var(--hrk-danger); background: var(--hrk-danger-bg); }
+.hrk-note--warn   { border-left-color: var(--hrk-warning); background: var(--hrk-warning-bg); }
+
+/* Zusatzmodul-Hinweis */
+.ze-addon-note  { margin-bottom: var(--hrk-space-4); }
+.ze-addon-title { margin: 0 0 var(--hrk-space-1); font-weight: var(--hrk-fw-semibold); }
+.ze-addon-text  { margin: 0; }
+.ze-addon-cta   { margin-top: var(--hrk-space-3); }
 
 /* ── Tabelle ── */
 .hrk-table { width: 100%; border-collapse: collapse; font-size: var(--hrk-fs-body); }
