@@ -481,7 +481,7 @@ export default {
     async loadEmployees() {
       this.empLoading = true;
       try {
-        const url = `${this.baseUrl}/rest/v1/employees?select=id,firstname,lastname&order=lastname.asc`;
+        const url = `${this.baseUrl}/rest/v1/rpc/get_user_employees?select=id,firstname,lastname&order=lastname.asc`;
         const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
         if (res.status === 401 || res.status === 403) { this.authError = true; return; }
         if (!res.ok) return;
