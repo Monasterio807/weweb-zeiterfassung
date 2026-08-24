@@ -52,7 +52,7 @@
         <!-- Mitarbeiter-Auswahl (nur wenn employeeId nicht per Prop gesetzt) -->
         <div v-if="!propEmployeeId" class="hrk-card" style="margin-bottom: var(--hrk-space-4)">
           <div class="hrk-field" style="margin-bottom: 0">
-            <label class="hrk-label" for="ze-emp-select">Mitarbeiter:in</label>
+            <label class="hrk-label" for="ze-emp-select">Mitarbeitende Person</label>
             <div v-if="empLoading" class="hrk-state hrk-state--mini">
               <div class="hrk-spinner" aria-hidden="true"></div>
             </div>
@@ -78,7 +78,7 @@
 
         <!-- Kein Mitarbeiter gewählt -->
         <div v-else-if="!selectedEmployee" class="hrk-state hrk-state--mini">
-          <p class="hrk-muted">Wähl oben eine:n Mitarbeiter:in, um die Woche anzuzeigen.</p>
+          <p class="hrk-muted">Wähl oben eine mitarbeitende Person, um die Woche anzuzeigen.</p>
         </div>
 
         <!-- Wochentabelle -->
@@ -526,7 +526,7 @@ export default {
       }
     },
     empName(e) {
-      return `${(e && e.firstname) || ''} ${(e && e.lastname) || ''}`.trim() || 'Mitarbeiter:in';
+      return `${(e && e.firstname) || ''} ${(e && e.lastname) || ''}`.trim() || 'Mitarbeitende Person';
     },
 
     // ── K9: laufende Schichten aus clock_events ──────────────────
