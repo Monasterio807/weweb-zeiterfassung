@@ -32,6 +32,23 @@
           <a class="hrk-btn hrk-btn--primary ze-addon-cta" :href="aboUrl">Zum Abo</a>
         </div>
 
+        <!-- K9 (Neukunden-Audit 24.08.2026): Wer gerade eingestempelt ist.
+             Ein Stempel wird erst beim Ausstempeln zu einem Tageseintrag —
+             bis dahin sah die Inhaberin nirgends, wer im Dienst ist. Diese
+             Leiste liest die Stempel des heutigen Tages direkt (clock_events,
+             RLS: nur der eigene Betrieb). -->
+        <div v-if="imDienst.length" class="hrk-card ze-dienst" style="margin-bottom: var(--hrk-space-4)">
+          <h2 class="hrk-h3 ze-dienst__title" style="margin-top:0">Gerade im Dienst</h2>
+          <ul class="ze-dienst__list">
+            <li v-for="d in imDienst" :key="d.employee_id" class="ze-dienst__row">
+              <span class="ze-dienst__name">{{ d.name }}</span>
+              <span class="hrk-badge" :class="d.status === 'break' ? 'hrk-badge--warning' : 'hrk-badge--success'">{{ d.status === 'break' ? 'in Pause' : 'eingestempelt' }}</span>
+              <span class="hrk-muted hrk-small">seit {{ d.seit }}</span>
+            </li>
+          </ul>
+          <p class="hrk-muted hrk-small">Die Stunden erscheinen unten in der Woche, sobald ausgestempelt wird.</p>
+        </div>
+
         <!-- Mitarbeiter-Auswahl (nur wenn employeeId nicht per Prop gesetzt) -->
         <div v-if="!propEmployeeId" class="hrk-card" style="margin-bottom: var(--hrk-space-4)">
           <div class="hrk-field" style="margin-bottom: 0">
@@ -173,6 +190,7 @@
                 <!-- Speichern -->
                 <td v-if="!readonly" class="ze-action-cell">
                   <div v-if="day.error" class="ze-row-error hrk-small" style="color: var(--hrk-danger)" role="alert">⚠ {{ day.error }}</div>
+                  <div v-else-if="day.hinweis" class="ze-row-error hrk-small" style="color: var(--hrk-warning)" role="status">{{ day.hinweis }}</div>
                   <button
                     v-else
                     type="button"
@@ -248,6 +266,9 @@ export default {
       empLoading:       false,
       employees:        [],
       selectedEmployee: '',
+
+      // K9: laufende Schichten (clock_events des heutigen Tages)
+      imDienst: [],
 
       // Woche
       weekOffset: 0,
@@ -417,9 +438,12 @@ export default {
       if (this.propEmployeeId) {
         this.selectedEmployee = this.propEmployeeId;
         this.loadWeek();
+        // Namen fuer die Dienst-Leiste brauchen die Liste ebenfalls.
+        this.loadEmployees();
       } else {
         this.loadEmployees();
       }
+      this.loadImDienst();
     },
 
     // ── Branche (nur Anzeige-Texte) ──────────────────────────────
@@ -481,13 +505,20 @@ export default {
     async loadEmployees() {
       this.empLoading = true;
       try {
-        const url = `${this.baseUrl}/rest/v1/rpc/get_user_employees?select=id,firstname,lastname&order=lastname.asc`;
+        // W26: employment_start mitladen — Stunden vor dem Eintritt bekommen einen Hinweis.
+        const url = `${this.baseUrl}/rest/v1/rpc/get_user_employees?select=id,firstname,lastname,employment_start&order=lastname.asc`;
         const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
         if (res.status === 401 || res.status === 403) { this.authError = true; return; }
         if (!res.ok) return;
         const rows = await res.json().catch(() => []);
         this.employees = Array.isArray(rows) ? rows : [];
         this.emit('loaded', { count: this.employees.length });
+        // K9: Namen der Dienst-Leiste nachziehen, sobald die Liste da ist.
+        if (this.imDienst.length) {
+          this.imDienst = this.imDienst.map((d) => Object.assign({}, d, {
+            name: this.empName(this.employees.find((e) => String(e.id) === d.employee_id)),
+          }));
+        }
       } catch (e) {
         /* Ladeliste optional — kein globalError */
       } finally {
@@ -496,6 +527,70 @@ export default {
     },
     empName(e) {
       return `${(e && e.firstname) || ''} ${(e && e.lastname) || ''}`.trim() || 'Mitarbeiter:in';
+    },
+
+    // ── K9: laufende Schichten aus clock_events ──────────────────
+    /** Datum in Europe/Zurich als YYYY-MM-DD — derselbe Arbeitstag wie im Kiosk. */
+    zurichDatum(d) {
+      try {
+        return new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Europe/Zurich', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(d);
+      } catch (e) {
+        return new Date(d).toISOString().slice(0, 10);
+      }
+    },
+    zurichUhrzeit(d) {
+      try {
+        return new Intl.DateTimeFormat('de-CH', {
+          timeZone: 'Europe/Zurich', hour: '2-digit', minute: '2-digit',
+        }).format(d);
+      } catch (e) { return ''; }
+    },
+    async loadImDienst() {
+      try {
+        // Grosszuegiges Fenster, danach exakt auf den heutigen Zuercher Tag filtern
+        // (gleiche Logik wie kiosk-clock-pin/currentStatus).
+        const seit = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+        const url = `${this.baseUrl}/rest/v1/clock_events`
+          + '?select=employee_id,event_type,event_time'
+          + `&event_time=gte.${encodeURIComponent(seit)}`
+          + '&order=event_time.asc';
+        const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
+        if (!res.ok) return;
+        const rows = await res.json().catch(() => []);
+        if (!Array.isArray(rows)) return;
+        const heute = this.zurichDatum(new Date());
+        const proMa = {};
+        rows.forEach((r) => {
+          const t = new Date(r.event_time);
+          if (this.zurichDatum(t) !== heute) return;
+          const id = String(r.employee_id || '');
+          if (!id) return;
+          const zustand = { clock_in: 'in', break_start: 'break', break_end: 'in', clock_out: 'out' }[r.event_type];
+          if (!zustand) return;
+          proMa[id] = { status: zustand, seit: this.zurichUhrzeit(t) };
+        });
+        this.imDienst = Object.keys(proMa)
+          .filter((id) => proMa[id].status === 'in' || proMa[id].status === 'break')
+          .map((id) => ({
+            employee_id: id,
+            status: proMa[id].status,
+            seit: proMa[id].seit,
+            name: this.empName(this.employees.find((e) => String(e.id) === id)),
+          }));
+      } catch (e) {
+        /* Anzeige ist Komfort — bei Fehler bleibt die Leiste einfach weg */
+      }
+    },
+    // W26 (Neukunden-Audit 24.08.2026): Stunden vor dem Eintrittsdatum wurden
+    // kommentarlos gespeichert. Wir blockieren nicht (Nacherfassung kann legitim
+    // sein), sagen es aber.
+    vorEintritt(datum) {
+      const e = this.employees.find((x) => String(x.id) === String(this.selectedEmployee));
+      const start = e && e.employment_start ? String(e.employment_start).slice(0, 10) : '';
+      if (!start || !datum) return '';
+      return String(datum).slice(0, 10) < start ? start : '';
     },
     onEmployeeChange() {
       this.loadWeek();
@@ -540,6 +635,7 @@ export default {
           saving:  false,
           saved:   false,
           error:   '',
+          hinweis: '',   // W26: Hinweis, wenn der Tag vor dem Eintritt liegt
         });
       }
       return days;
@@ -618,6 +714,12 @@ export default {
       day.saving = true;
       day.saved  = false;
       day.error  = '';
+      day.hinweis = '';
+      // W26: Tag liegt vor dem Eintritt — speichern, aber sagen.
+      const eintritt = this.vorEintritt(day.date);
+      if (eintritt) {
+        day.hinweis = `Dieser Tag liegt vor dem Eintritt am ${this.fmtDatum(eintritt)}. Wir speichern die Stunden trotzdem, prüf kurz, ob das so gewollt ist.`;
+      }
 
       const payload = {
         employee_id:   this.selectedEmployee,
@@ -920,6 +1022,12 @@ export default {
 /* Total-Zeile */
 .ze-total-row td { font-weight: var(--hrk-fw-semibold); border-top: 2px solid var(--hrk-border-strong); border-bottom: none; }
 .ze-total-cell { color: var(--hrk-bordeaux); font-variant-numeric: tabular-nums; }
+
+/* ── K9: Leiste «Gerade im Dienst» ── */
+.ze-dienst__title { margin-bottom: var(--hrk-space-2); }
+.ze-dienst__list  { list-style: none; margin: 0 0 var(--hrk-space-2); padding: 0; }
+.ze-dienst__row   { display: flex; align-items: center; gap: var(--hrk-space-2); padding: var(--hrk-space-1) 0; flex-wrap: wrap; }
+.ze-dienst__name  { font-weight: var(--hrk-fw-semibold); }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
