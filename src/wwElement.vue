@@ -367,6 +367,20 @@ export default {
   },
 
   methods: {
+    // user_id aus dem JWT (sub) — wie zeugnis-erstellen/onboarding-wizard, damit
+    // Admins (RLS: sehen alle Betriebe) nicht versehentlich fremde Daten laden.
+    userIdFromJwt(token) {
+      try {
+        const t = (token || '').replace(/^Bearer\s+/i, '');
+        const part = t.split('.')[1];
+        if (!part) return '';
+        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+        const json = JSON.parse(decodeURIComponent(escape(atob(b64))));
+        return json && json.sub ? json.sub : '';
+      } catch (e) {
+        return '';
+      }
+    },
     // ── Infrastruktur ────────────────────────────────────────────
     async fetchWithTimeout(url, options, ms) {
       const timeout = ms || 10000;
@@ -447,14 +461,19 @@ export default {
     },
 
     // ── Branche (nur Anzeige-Texte) ──────────────────────────────
-    // Liest company_profiles.branche (RLS = eigener Betrieb). Schlaegt das fehl
-    // oder ist die Branche leer, bleibt still das heutige Gastro-Label stehen —
-    // reine Anzeige-Degradation. Die verbindliche Pausen-Pruefung kommt vom
-    // Server (break_compliant / required_break_minutes), hier wird nichts gerechnet.
+    // Liest company_profiles.branche. RLS ist `(auth.uid() = user_id) OR is_admin()` —
+    // der alte Kommentar hier behauptete faelschlich "RLS = eigener Betrieb"; ein
+    // Admin-Konto bekam ohne eigenen Filter eine beliebige der Betriebszeilen
+    // (Mega-Audit 27.08.2026, SC8-7). Schlaegt der Fetch fehl oder ist die Branche
+    // leer, bleibt still das heutige Gastro-Label stehen — reine Anzeige-Degradation.
+    // Die verbindliche Pausen-Pruefung kommt vom Server (break_compliant /
+    // required_break_minutes), hier wird nichts gerechnet.
     async loadBranche() {
       if (this.branche) return; // idempotent — init() laeuft auch bei Token-Wechsel
       try {
-        const url = `${this.baseUrl}/rest/v1/company_profiles?select=branche&limit=1`;
+        const uid = this.userIdFromJwt(this.tokenRaw);
+        const q = uid ? `user_id=eq.${encodeURIComponent(uid)}&` : '';
+        const url = `${this.baseUrl}/rest/v1/company_profiles?${q}select=branche&limit=1`;
         const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
         if (!res || !res.ok) return;
         const rows = await res.json().catch(() => []);
