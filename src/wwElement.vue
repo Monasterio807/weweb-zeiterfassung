@@ -10,12 +10,12 @@
             Trag die geleisteten Stunden wochenweise ein.
           </p>
         </div>
-        <a v-if="content && content.backUrl" class="hrk-btn hrk-btn--ghost" :href="content.backUrl">← Zurück</a>
+        <a v-if="content && content.backUrl" class="hrk-btn hrk-btn--ghost" :href="content.backUrl"><svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="11,6 5,12 11,18"/></svg>Zurück</a>
       </div>
 
       <!-- Auth-Fehler -->
       <div v-if="authError" class="hrk-state" role="alert">
-        <div class="hrk-state__icon" aria-hidden="true">🔒</div>
+        <div class="hrk-state__icon" aria-hidden="true"><svg class="hrk-icon hrk-icon--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
         <p class="hrk-state__title">Bitte neu anmelden</p>
         <p class="hrk-muted">Damit du Stunden erfassen kannst, meld dich bitte wieder an.</p>
       </div>
@@ -65,9 +65,9 @@
 
         <!-- Wochennavigation -->
         <div class="ze-week-nav hrk-card" style="margin-bottom: var(--hrk-space-4)">
-          <button type="button" class="hrk-btn hrk-btn--secondary" @click="shiftWeek(-1)">← Vorwoche</button>
+          <button type="button" class="hrk-btn hrk-btn--secondary" @click="shiftWeek(-1)"><svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="11,6 5,12 11,18"/></svg>Vorwoche</button>
           <span class="ze-week-label hrk-h3" style="margin: 0">{{ weekLabel }}</span>
-          <button type="button" class="hrk-btn hrk-btn--secondary" @click="shiftWeek(1)" :disabled="weekOffset >= 0">Nächste Woche →</button>
+          <button type="button" class="hrk-btn hrk-btn--secondary" @click="shiftWeek(1)" :disabled="weekOffset >= 0">Nächste Woche<svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></button>
         </div>
 
         <!-- Laden-Zustand -->
@@ -169,7 +169,7 @@
                 </td>
 
                 <!-- Netto (live berechnet) -->
-                <td class="ze-net-cell" :class="netClass(day)">
+                <td class="ze-net-cell hrk-num" :class="netClass(day)">
                   <span class="ze-net-value">{{ formatNet(day) }}</span>
                 </td>
 
@@ -189,7 +189,7 @@
 
                 <!-- Speichern -->
                 <td v-if="!readonly" class="ze-action-cell">
-                  <div v-if="day.error" class="ze-row-error hrk-small" style="color: var(--hrk-danger)" role="alert">⚠ {{ day.error }}</div>
+                  <div v-if="day.error" class="ze-row-error hrk-small" style="color: var(--hrk-danger)" role="alert"><svg class="hrk-icon hrk-icon--sm ze-row-error__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polygon points="12,4 21,20 3,20"/><line x1="12" y1="10" x2="12" y2="14.5"/><line x1="12" y1="17" x2="12" y2="17"/></svg>{{ day.error }}</div>
                   <div v-else-if="day.hinweis" class="ze-row-error hrk-small" style="color: var(--hrk-warning)" role="status">{{ day.hinweis }}</div>
                   <button
                     v-else
@@ -200,7 +200,7 @@
                     :aria-label="'Speichern ' + day.weekday"
                   >
                     <span v-if="day.saving">…</span>
-                    <span v-else-if="day.saved" style="color: var(--hrk-success)">✓</span>
+                    <span v-else-if="day.saved" class="ze-saved" style="color: var(--hrk-success)"><svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg></span>
                     <span v-else>Speichern</span>
                   </button>
                 </td>
@@ -211,7 +211,7 @@
             <tfoot>
               <tr class="ze-total-row">
                 <td class="hrk-muted" :colspan="readonly ? 4 : 4">Wochentotal</td>
-                <td class="ze-total-cell">{{ weekTotal }}</td>
+                <td class="ze-total-cell hrk-num">{{ weekTotal }}</td>
                 <td :colspan="readonly ? 1 : 2"></td>
               </tr>
             </tfoot>
@@ -877,24 +877,24 @@ export default {
   --hrk-bordeaux:        #7B2D3B;
   --hrk-bordeaux-dark:   #5E2129;
   --hrk-bordeaux-soft:   #F3E7E9;
-  --hrk-creme:           #FBF8F3;
-  --hrk-anthrazit:       #2B2B2B;
+  --hrk-creme: #F7F5F1;
+  --hrk-anthrazit: #241F1C;
   --hrk-gold:            #C9A24B;
   --hrk-on-primary:      #FFFFFF;  /* Text/Icons auf primaer (Bordeaux) gefaerbten Flaechen */
   --hrk-surface:         #FFFFFF;
-  --hrk-surface-muted:   #F5F1EB;
-  --hrk-border:          #ECE5D9;
-  --hrk-border-strong:   #DAD2C6;
-  --hrk-text:            #2B2B2B;
+  --hrk-surface-muted: #F2EFEA;
+  --hrk-border: #E2DDD5;
+  --hrk-border-strong: #CFC8BD;
+  --hrk-text: #241F1C;
   --hrk-text-muted:      #6B6357;
-  --hrk-success:         #2E7D5B; --hrk-success-bg: #E5F1EB;
-  --hrk-warning:         #B7791F; --hrk-warning-bg: #FBF1DD;
+  --hrk-success: #2A7254; --hrk-success-bg: #E5F1EB;
+  --hrk-warning: #946010; --hrk-warning-bg: #FBF1DD;
   --hrk-danger:          #B23A48; --hrk-danger-bg:  #F8E7E9;
   --hrk-info:            #2F6F9F; --hrk-info-bg:    #E6F0F7;
   --hrk-neutral:         #6B6357; --hrk-neutral-bg: #EFEAE2;
-  --hrk-font-head: "Fraunces", "Lora", Georgia, serif;
+  --hrk-font-head: "Archivo", "Inter", system-ui, sans-serif;
   --hrk-font-body: "Inter", "Source Sans 3", system-ui, sans-serif;
-  --hrk-fs-h1: 1.9375rem;
+  --hrk-fs-h1: 1.875rem;
   --hrk-fs-h2: 1.375rem;
   --hrk-fs-h3: 1.125rem;
   --hrk-fs-body: 1.0625rem;
@@ -904,13 +904,31 @@ export default {
   --hrk-space-1: 4px;  --hrk-space-2: 8px;  --hrk-space-3: 12px;
   --hrk-space-4: 16px; --hrk-space-5: 24px; --hrk-space-6: 32px;
   --hrk-space-7: 48px;
-  --hrk-radius-sm: 8px; --hrk-radius-md: 12px; --hrk-radius-lg: 14px;
-  --hrk-radius-pill: 999px;
+  --hrk-radius-sm: 6px; --hrk-radius-md: 6px; --hrk-radius-lg: 10px;
+  --hrk-radius-pill: 6px;
   --hrk-shadow-card: 0 1px 2px rgba(40,35,30,.05);
-  --hrk-shadow-pop:  0 8px 28px rgba(40,35,30,.12);
-  --hrk-focus-ring:  0 0 0 3px rgba(123,45,59,.30);
+  --hrk-shadow-pop: 0 1px 2px rgba(40,35,30,.05);
+  --hrk-focus-ring: 0 0 0 3px rgba(51,71,91,.35);
   --hrk-tap-min: 44px;
   --hrk-page-max: 880px;
+  /* Design-Umsetzung 23.09.2026 (Phase 1): Schiefer, Schriften, zwei Radien, ein Schatten */
+  --hrk-schiefer: #33475B;
+  --hrk-schiefer-dark: #243444;
+  --hrk-schiefer-soft: #EBEEF1;
+  --hrk-on-dark: #FFFFFF;
+  --hrk-on-dark-strong: rgba(255,255,255,.92);
+  --hrk-on-dark-soft: rgba(255,255,255,.82);
+  --hrk-on-dark-muted: rgba(255,255,255,.40);
+  --hrk-on-dark-faint: rgba(255,255,255,.12);
+  --hrk-overlay: rgba(20,24,28,.55);
+  --hrk-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --hrk-font-brand: "Fraunces", Georgia, serif;
+  --hrk-fs-xs: 0.8125rem;
+  --hrk-ls-caps: .06em;
+  --hrk-radius-field: 6px;
+  --hrk-radius-card: 10px;
+  --hrk-shadow: 0 1px 2px rgba(40,35,30,.05);
+  --hrk-page-wide: 1200px;
 }
 
 /* ── Basis ── */
@@ -922,51 +940,64 @@ export default {
   background: var(--hrk-creme); -webkit-font-smoothing: antialiased;
 }
 .hrk-page { max-width: var(--hrk-page-max); margin: 0 auto; padding: var(--hrk-space-6) var(--hrk-space-4); }
-.hrk-page--wide { max-width: 1100px; }
-.hrk-h1 { font-family: var(--hrk-font-head); font-size: var(--hrk-fs-h1); font-weight: var(--hrk-fw-semibold); line-height: 1.12; letter-spacing: -.02em; color: var(--hrk-bordeaux); margin: 0 0 var(--hrk-space-3); }
-.hrk-h2 { font-family: var(--hrk-font-head); font-size: var(--hrk-fs-h2); font-weight: var(--hrk-fw-semibold); color: var(--hrk-bordeaux); margin: var(--hrk-space-6) 0 var(--hrk-space-3); }
-.hrk-h3 { font-family: var(--hrk-font-body); font-size: var(--hrk-fs-h3); font-weight: var(--hrk-fw-semibold); margin: var(--hrk-space-5) 0 var(--hrk-space-2); }
+.hrk-page--wide { max-width: var(--hrk-page-wide); }
+.hrk-h1 { font-family: var(--hrk-font-head); font-size: var(--hrk-fs-h1); font-weight: var(--hrk-fw-semibold); line-height: 1.12; letter-spacing: -.02em; color: var(--hrk-text); margin: 0 0 var(--hrk-space-3); }
+.hrk-h2 { font-family: var(--hrk-font-head); font-size: var(--hrk-fs-h2); font-weight: var(--hrk-fw-semibold); color: var(--hrk-text); margin: var(--hrk-space-6) 0 var(--hrk-space-3); }
+.hrk-h3 { font-family: var(--hrk-font-head); font-size: var(--hrk-fs-h3); font-weight: var(--hrk-fw-semibold); margin: var(--hrk-space-5) 0 var(--hrk-space-2); }
 .hrk-muted { color: var(--hrk-text-muted); }
 .hrk-small { font-size: var(--hrk-fs-small); }
 .hrk-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--hrk-space-2);
   min-height: var(--hrk-tap-min); padding: 0 var(--hrk-space-5);
   font: inherit; font-weight: var(--hrk-fw-semibold);
-  border-radius: var(--hrk-radius-md); border: 1px solid transparent;
+  border-radius: var(--hrk-radius-field); border: 1px solid transparent;
   cursor: pointer; text-decoration: none; transition: background .15s, border-color .15s;
 }
 .hrk-btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); }
 .hrk-btn--primary   { background: var(--hrk-bordeaux); color: var(--hrk-on-primary); }
 .hrk-btn--primary:hover { background: var(--hrk-bordeaux-dark); }
-.hrk-btn--secondary { background: var(--hrk-surface); color: var(--hrk-bordeaux); border-color: var(--hrk-border-strong); }
-.hrk-btn--secondary:hover { background: var(--hrk-bordeaux-soft); }
-.hrk-btn--ghost     { background: transparent; color: var(--hrk-bordeaux); }
-.hrk-btn--ghost:hover { background: var(--hrk-bordeaux-soft); }
+.hrk-btn--secondary { background: var(--hrk-surface); color: var(--hrk-schiefer); border-color: var(--hrk-border-strong); }
+.hrk-btn--secondary:hover { background: var(--hrk-schiefer-soft); }
+.hrk-btn--ghost     { background: transparent; color: var(--hrk-schiefer); }
+.hrk-btn--ghost:hover { background: var(--hrk-schiefer-soft); }
 .hrk-btn[disabled]  { opacity: .5; cursor: not-allowed; }
 .hrk-field { display: block; margin-bottom: var(--hrk-space-4); }
 .hrk-label { display: block; font-weight: var(--hrk-fw-medium); margin-bottom: var(--hrk-space-1); }
 .hrk-input, .hrk-select {
   width: 100%; min-height: var(--hrk-tap-min); padding: var(--hrk-space-3);
   font: inherit; color: var(--hrk-text); background: var(--hrk-surface);
-  border: 1px solid var(--hrk-border); border-radius: var(--hrk-radius-sm);
+  border: 1px solid var(--hrk-border-strong); border-radius: var(--hrk-radius-field);
 }
-.hrk-input:focus, .hrk-select:focus { outline: none; border-color: var(--hrk-bordeaux); box-shadow: var(--hrk-focus-ring); }
+.hrk-input:focus, .hrk-select:focus { outline: none; border-color: var(--hrk-schiefer); box-shadow: var(--hrk-focus-ring); }
 .hrk-card {
   background: var(--hrk-surface); border: 1px solid var(--hrk-border);
-  border-radius: var(--hrk-radius-lg); box-shadow: var(--hrk-shadow-card); padding: var(--hrk-space-5);
+  border-radius: var(--hrk-radius-card); box-shadow: var(--hrk-shadow); padding: var(--hrk-space-5);
 }
 .hrk-card + .hrk-card { margin-top: var(--hrk-space-4); }
 .hrk-state { display: flex; flex-direction: column; align-items: center; gap: var(--hrk-space-3); padding: var(--hrk-space-7) var(--hrk-space-4); color: var(--hrk-text-muted); text-align: center; }
 .hrk-state--mini { padding: var(--hrk-space-5) var(--hrk-space-4); }
 .hrk-state__title { color: var(--hrk-text); font-weight: var(--hrk-fw-semibold); margin: 0; }
-.hrk-state__icon  { font-size: 2rem; }
-.hrk-spinner { width: 28px; height: 28px; border: 3px solid var(--hrk-border); border-top-color: var(--hrk-bordeaux); border-radius: 50%; animation: hrk-spin .8s linear infinite; }
+.hrk-state__icon  { display: inline-flex; color: var(--hrk-text-muted); }
+.hrk-spinner { width: 28px; height: 28px; border: 3px solid var(--hrk-border); border-top-color: var(--hrk-schiefer); border-radius: 50%; animation: hrk-spin .8s linear infinite; }
 @keyframes hrk-spin { to { transform: rotate(360deg); } }
 .hrk-record-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--hrk-space-3); flex-wrap: wrap; }
 .hrk-record-head__main { flex: 1 1 14rem; min-width: 0; }
-.hrk-note { border-left: 4px solid var(--hrk-info); background: var(--hrk-info-bg); padding: var(--hrk-space-3) var(--hrk-space-4); border-radius: var(--hrk-radius-sm); }
+.hrk-note { border-left: 3px solid var(--hrk-info); background: var(--hrk-info-bg); padding: var(--hrk-space-3) var(--hrk-space-4); border-radius: 0 var(--hrk-radius-field) var(--hrk-radius-field) 0; }
 .hrk-note--danger { border-left-color: var(--hrk-danger); background: var(--hrk-danger-bg); }
 .hrk-note--warn   { border-left-color: var(--hrk-warning); background: var(--hrk-warning-bg); }
+/* Status-Badges: Farbpunkt + Wort (aus design-tokens.css; fehlte hier, das Template nutzt sie) */
+.hrk-badge { display: inline-flex; align-items: center; gap: var(--hrk-space-2);
+  padding: 0; border-radius: 0; background: none;
+  font-size: var(--hrk-fs-small); font-weight: var(--hrk-fw-semibold); line-height: 1.6; white-space: nowrap; }
+.hrk-badge::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.hrk-badge--success { color: var(--hrk-success); }
+.hrk-badge--warning { color: var(--hrk-warning); }
+/* Zahlen in Kolonnen (Stunden) */
+.hrk-num { font-family: var(--hrk-font-mono); font-variant-numeric: tabular-nums; }
+/* Icons (Inline-SVG, Katalog ICONS.md) */
+.hrk-icon { width: var(--hrk-icon-size-md, 20px); height: var(--hrk-icon-size-md, 20px); flex: none; }
+.hrk-icon--sm { width: var(--hrk-icon-size-sm, 16px); height: var(--hrk-icon-size-sm, 16px); }
+.hrk-icon--lg { width: var(--hrk-icon-size-lg, 28px); height: var(--hrk-icon-size-lg, 28px); }
 
 /* Zusatzmodul-Hinweis */
 .ze-addon-note  { margin-bottom: var(--hrk-space-4); }
@@ -977,8 +1008,9 @@ export default {
 /* ── Tabelle ── */
 .hrk-table { width: 100%; border-collapse: collapse; font-size: var(--hrk-fs-body); }
 .hrk-table th {
-  text-align: left; font-weight: var(--hrk-fw-semibold); color: var(--hrk-text-muted);
-  background: var(--hrk-surface-muted); padding: var(--hrk-space-3); border-bottom: 1px solid var(--hrk-border);
+  text-align: left; font-family: var(--hrk-font-head); font-size: var(--hrk-fs-small); font-weight: var(--hrk-fw-semibold);
+  text-transform: uppercase; letter-spacing: var(--hrk-ls-caps); color: var(--hrk-schiefer);
+  background: var(--hrk-surface-muted); padding: var(--hrk-space-3); border-bottom: 1px solid var(--hrk-border-strong);
 }
 .hrk-table td { padding: var(--hrk-space-2) var(--hrk-space-3); border-bottom: 1px solid var(--hrk-border); vertical-align: middle; }
 
@@ -1005,7 +1037,7 @@ export default {
 .ze-input-note  { width: 100%; min-width: 120px; }
 
 /* Heute-Hervorhebung */
-.ze-row--today td { background: var(--hrk-bordeaux-soft); }
+.ze-row--today td { background: var(--hrk-schiefer-soft); }
 
 /* Farbcodierung Zeilen */
 /* Stempeluhr-MVP (additiv): Pause unter dem Pausen-Minimum — steht VOR warning/danger,
@@ -1037,10 +1069,12 @@ export default {
 }
 .ze-action-cell { white-space: nowrap; }
 .ze-row-error   { max-width: 100px; white-space: normal; }
+.ze-row-error__icon { display: inline-block; vertical-align: -3px; margin-right: var(--hrk-space-1); }
+.ze-saved { display: inline-flex; }
 
 /* Total-Zeile */
 .ze-total-row td { font-weight: var(--hrk-fw-semibold); border-top: 2px solid var(--hrk-border-strong); border-bottom: none; }
-.ze-total-cell { color: var(--hrk-bordeaux); font-variant-numeric: tabular-nums; }
+.ze-total-cell { color: var(--hrk-schiefer); font-variant-numeric: tabular-nums; }
 
 /* ── K9: Leiste «Gerade im Dienst» ── */
 .ze-dienst__title { margin-bottom: var(--hrk-space-2); }
@@ -1058,7 +1092,7 @@ export default {
   :root, .hrk-root { --hrk-fs-h1: 1.625rem; }
   .hrk-page  { padding: var(--hrk-space-4) var(--hrk-space-3); }
   .hrk-card  { padding: var(--hrk-space-4); }
-  .hrk-table { font-size: var(--hrk-fs-small); }
+  /* Tabellen bleiben 17px lesbar; nur der Innenabstand wird enger (Phase 1) */
   .hrk-table th, .hrk-table td { padding: var(--hrk-space-1) var(--hrk-space-2); }
   .ze-input-time  { max-width: 80px; }
   .ze-input-note  { min-width: 80px; }
