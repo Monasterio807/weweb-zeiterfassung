@@ -7,7 +7,7 @@
         <div class="hrk-record-head__main">
           <h1 class="hrk-h1" style="margin: 0">Zeiterfassung</h1>
           <p class="hrk-muted" style="margin: var(--hrk-space-1) 0 0">
-            Trag die geleisteten Stunden wochenweise ein.
+            Trag die Stunden Tag für Tag ein und speichere jede Zeile.
           </p>
         </div>
         <a v-if="content && content.backUrl" class="hrk-btn hrk-btn--ghost" :href="content.backUrl"><svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="11,6 5,12 11,18"/></svg>Zurück</a>
@@ -26,7 +26,7 @@
           <p class="ze-addon-title">Zeiterfassung ist ein Zusatzmodul</p>
           <p class="ze-addon-text">
             Dein Abo enthält die Zeiterfassung im Moment nicht. Bestehende Einträge kannst du
-            weiterhin ansehen und anpassen — für neue Einträge schaltest du das Modul im
+            weiterhin ansehen und anpassen. Für neue Einträge schaltest du das Modul im
             Abo-Bereich frei.
           </p>
           <a class="hrk-btn hrk-btn--primary ze-addon-cta" :href="aboUrl">Zum Abo</a>
@@ -89,7 +89,7 @@
                 <th class="ze-col-day">Tag</th>
                 <th class="ze-col-time">Start</th>
                 <th class="ze-col-time">Ende</th>
-                <th class="ze-col-pause">Pause<br><span class="hrk-small" style="font-weight: 400">(min)</span></th>
+                <th class="ze-col-pause">Pause<br><span class="hrk-small" style="font-weight: 400">(Min.)</span></th>
                 <th class="ze-col-net">Netto</th>
                 <th class="ze-col-note">Notiz</th>
                 <th v-if="!readonly" class="ze-col-action"></th>
@@ -132,7 +132,7 @@
                     type="time"
                     v-model="day.start"
                     :disabled="readonly"
-                    @change="day.saved = false"
+                    @input="onDayEdit(day)" @change="onDayEdit(day)"
                     :aria-label="'Start ' + day.weekday"
                   />
                 </td>
@@ -144,7 +144,7 @@
                     type="time"
                     v-model="day.end"
                     :disabled="readonly"
-                    @change="day.saved = false"
+                    @input="onDayEdit(day)" @change="onDayEdit(day)"
                     :aria-label="'Ende ' + day.weekday"
                   />
                 </td>
@@ -159,7 +159,7 @@
                     step="5"
                     v-model.number="day.pause"
                     :disabled="readonly"
-                    @change="day.saved = false"
+                    @input="onDayEdit(day)" @change="onDayEdit(day)"
                     :aria-label="'Pause ' + day.weekday"
                   />
                   <!-- Hinweis: Pause unter dem Pausen-Minimum (Serverwert, generierte Spalte; Label je Branche) -->
@@ -182,7 +182,7 @@
                     placeholder="Notiz …"
                     v-model="day.note"
                     :disabled="readonly"
-                    @change="day.saved = false"
+                    @input="onDayEdit(day)" @change="onDayEdit(day)"
                     :aria-label="'Notiz ' + day.weekday"
                   />
                 </td>
@@ -191,16 +191,16 @@
                 <td v-if="!readonly" class="ze-action-cell">
                   <div v-if="day.error" class="ze-row-error hrk-small" style="color: var(--hrk-danger)" role="alert"><svg class="hrk-icon hrk-icon--sm ze-row-error__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polygon points="12,4 21,20 3,20"/><line x1="12" y1="10" x2="12" y2="14.5"/><line x1="12" y1="17" x2="12" y2="17"/></svg>{{ day.error }}</div>
                   <div v-else-if="day.hinweis" class="ze-row-error hrk-small" style="color: var(--hrk-warning)" role="status">{{ day.hinweis }}</div>
+                  <!-- Pruefung 24.09. (K5): der Knopf bleibt neben Fehler/Hinweis stehen, sonst gab es nach einem Fehler keinen zweiten Versuch. -->
                   <button
-                    v-else
                     type="button"
                     class="hrk-btn hrk-btn--secondary ze-save-btn"
                     :disabled="day.saving || !canSave(day)"
                     @click="saveDay(day)"
-                    :aria-label="'Speichern ' + day.weekday"
+                    :aria-label="(day.saved ? 'Gespeichert, ' : 'Speichern ') + day.weekday"
                   >
                     <span v-if="day.saving">…</span>
-                    <span v-else-if="day.saved" class="ze-saved" style="color: var(--hrk-success)"><svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg></span>
+                    <span v-else-if="day.saved" class="ze-saved" style="color: var(--hrk-success)"><svg class="hrk-icon hrk-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="5,12.5 10,17.5 19,7"/></svg><span class="ze-saved__text">Gespeichert</span></span>
                     <span v-else>Speichern</span>
                   </button>
                 </td>
@@ -334,9 +334,11 @@ export default {
       return !!b && b !== 'gastro';
     },
     weekLabel() {
-      if (!this.weekDays.length) return '';
-      const first = this.weekDays[0];
-      const last  = this.weekDays[6];
+      // Waehrend des Ladens bzw. nach einem Ladefehler ist weekDays leer (K6) — das Label
+      // kommt dann aus der leeren Woche, damit die Navigation lesbar bleibt.
+      const tage = this.weekDays.length ? this.weekDays : this.buildEmptyWeek();
+      const first = tage[0];
+      const last  = tage[6];
       return `${first.label} – ${last.label} ${first.year}`;
     },
     weekTotal() {
@@ -345,7 +347,7 @@ export default {
         const min = this.calcNetMin(d);
         if (min !== null && min > 0) total += min;
       });
-      return this.fmtMin(total) || '0h';
+      return this.fmtMin(total) || '0 Std.';
     },
   },
 
@@ -455,7 +457,17 @@ export default {
         // Namen fuer die Dienst-Leiste brauchen die Liste ebenfalls.
         this.loadEmployees();
       } else {
-        this.loadEmployees();
+        // S5-B12 (Vollaudit 23.09.2026): Links aus dem Compliance-Cockpit/Dashboard koennen
+        // die Person per ?mitarbeiter=<uuid> mitgeben. Uebernommen wird sie nur, wenn sie in
+        // der eigenen Mitarbeiterliste steht (RPC get_user_employees) und noch niemand
+        // gewaehlt wurde; sonst bleibt die Auswahl leer wie bisher.
+        const ausUrl = this.urlMitarbeiter();
+        Promise.resolve(this.loadEmployees()).then(() => {
+          if (ausUrl && !this.selectedEmployee && this.employees.some((e) => String(e.id) === ausUrl)) {
+            this.selectedEmployee = ausUrl;
+            this.loadWeek();
+          }
+        }).catch(() => { /* Vorauswahl ist Komfort */ });
       }
       this.loadImDienst();
     },
@@ -614,6 +626,26 @@ export default {
     onEmployeeChange() {
       this.loadWeek();
     },
+    // Jede Eingabe in einer Zeile: Haekchen weg, alte Fehler-/Hinweiszeile weg (K5).
+    onDayEdit(day) {
+      day.saved = false;
+      day.error = '';
+      day.hinweis = '';
+    },
+    // Inhalt einer Zeile als Vergleichswert (W1).
+    daySig(day) {
+      return [day.start || '', day.end || '', Number(day.pause) || 0, day.note || ''].join('|');
+    },
+    // ?mitarbeiter=<uuid> aus der URL, nur im UUID-Format (sonst '').
+    urlMitarbeiter() {
+      try {
+        const win = (typeof wwLib !== 'undefined' && wwLib.getFrontWindow) ? wwLib.getFrontWindow() : (typeof window !== 'undefined' ? window : null);
+        const search = (win && win.location && win.location.search) || '';
+        const m = String(search).match(/[?&]mitarbeiter=([^&#]*)/);
+        const v = m ? decodeURIComponent(m[1]).trim().toLowerCase() : '';
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v) ? v : '';
+      } catch (e) { return ''; }
+    },
 
     // ── Woche berechnen ──────────────────────────────────────────
     getMondayDate() {
@@ -669,9 +701,16 @@ export default {
 
     // ── Laden ────────────────────────────────────────────────────
     async loadWeek() {
-      if (!this.selectedEmployee) { this.weekDays = this.buildEmptyWeek(); return; }
+      // Pruefung 24.09. (K6): jede Ladung bekommt eine Nummer; eine ueberholte Antwort
+      // (schneller Personen- oder Wochenwechsel) wird verworfen. Die alte Woche wird
+      // sofort entfernt: nach einem Ladefehler stuenden sonst die Eintraege von Person A
+      // unter Person B, und Speichern haette sie per PATCH auf B umgeschrieben.
+      const seq = (this._weekSeq || 0) + 1;
+      this._weekSeq = seq;
+      if (!this.selectedEmployee) { this.weekDays = this.buildEmptyWeek(); this.loading = false; return; }
       this.loading = true;
       this.globalError = '';
+      this.weekDays = [];
       const days = this.buildEmptyWeek();
 
       try {
@@ -684,10 +723,12 @@ export default {
           + `&select=id,work_date,start_time,end_time,break_minutes,worked_minutes,note,gross_minutes,required_break_minutes,break_compliant,source`;
 
         const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
+        if (seq !== this._weekSeq) return;
         if (res.status === 401 || res.status === 403) { this.authError = true; return; }
         if (!res.ok) { this.globalError = 'Wochendaten konnten nicht geladen werden.'; return; }
 
         const entries = await res.json().catch(() => []);
+        if (seq !== this._weekSeq) return;
 
         // Pro Datum: ersten Eintrag nehmen (falls mehrere existieren / Splitschicht)
         const byDate = {};
@@ -708,16 +749,19 @@ export default {
             day.source         = e.source || '';
             day.breakCompliant = (typeof e.break_compliant === 'boolean') ? e.break_compliant : null;
             day.requiredBreak  = (typeof e.required_break_minutes === 'number') ? e.required_break_minutes : null;
+            // S5-B11 (Vollaudit 23.09.2026): was schon in der Datenbank steht, zeigt das Haekchen.
+            day.saved          = true;
           }
         });
 
         this.weekDays = days;
         this.emit('loaded', { count: Object.keys(byDate).length });
       } catch (e) {
+        if (seq !== this._weekSeq) return;
         this.globalError = 'Netzwerkfehler beim Laden der Woche.';
         this.emit('error', { reason: 'network' });
       } finally {
-        this.loading = false;
+        if (seq === this._weekSeq) this.loading = false;
       }
     },
 
@@ -751,6 +795,9 @@ export default {
       // source nur bei NEUEN Eintraegen setzen — beim Bearbeiten bestehender
       // Eintraege bleibt 'clock' (Stempeluhr) erhalten (additiv, Stempeluhr-MVP).
       if (!day.entryId) payload.source = 'manual';
+      // Pruefung 24.09. (W1): Stand beim Senden merken. Wird waehrend des Requests weiter
+      // getippt, darf der Erfolg kein «Gespeichert» zeigen — gespeichert ist nur, was gesendet wurde.
+      const gesendet = this.daySig(day);
 
       try {
         let res;
@@ -788,7 +835,7 @@ export default {
           return;
         }
         if (!res.ok) {
-          day.error = 'Speichern fehlgeschlagen – bitte nochmal versuchen.';
+          day.error = 'Speichern hat nicht geklappt. Bitte versuch es nochmal.';
           this.emit('error', { reason: 'save' });
           return;
         }
@@ -799,8 +846,10 @@ export default {
           day.entryId       = row.id || day.entryId;
           day.workedMinutes = row.worked_minutes || null;
         }
-        day.saved = true;
-        setTimeout(() => { if (day.saved) day.saved = false; }, 3000);
+        // S5-B11: das Haekchen bleibt bis zur naechsten Aenderung (@input/@change setzen saved=false).
+        // Frueher verschwand es nach 3 s, und man sah nicht mehr, welche Zeile gespeichert ist.
+        // W1: nur, wenn die Zeile seit dem Senden unveraendert ist.
+        day.saved = this.daySig(day) === gesendet;
         this.emit('saved', { date: day.date, worked_minutes: (row && row.worked_minutes) || 0 });
 
       } catch (e) {
@@ -825,18 +874,21 @@ export default {
       if (endMin <= startMin) endMin += 24 * 60; // Nachtschicht
       return Math.max(0, endMin - startMin - (day.pause || 0));
     },
+    // Stundenformat (S5-B13, Vollaudit 23.09.2026, gleich in dienstplan und compliance-cockpit):
+    // «7 Std. 45 Min.», «7 Std.», «45 Min.»; 0/leer = '' (Aufrufer setzen «0 Std.»).
     fmtMin(totalMin) {
-      if (!totalMin || totalMin <= 0) return '';
-      const h = Math.floor(totalMin / 60);
-      const m = totalMin % 60;
-      if (h && m) return `${h}h ${m}m`;
-      if (h) return `${h}h`;
-      return `${m}m`;
+      const t = Math.round(Number(totalMin) || 0);
+      if (t <= 0) return '';
+      const h = Math.floor(t / 60);
+      const m = t % 60;
+      if (h && m) return `${h} Std. ${m} Min.`;
+      if (h) return `${h} Std.`;
+      return `${m} Min.`;
     },
     formatNet(day) {
       const min = this.calcNetMin(day);
       if (min === null) return '—';
-      return this.fmtMin(min) || '0m';
+      return this.fmtMin(min) || '0 Std.';
     },
     netClass(day) {
       const min = this.calcNetMin(day);
@@ -847,13 +899,14 @@ export default {
       return '';
     },
     // Label des Pausen-Hinweises je Rechtsrahmen (datengetrieben):
-    // Gastro und unbekannt/degradiert = EXAKT der bisherige Text, Ziffer fuer
-    // Ziffer. Andere Branchen = neutrale Formulierung — dahinter steht kein
-    // L-GAV, und Rechtswerte werden hier keine erfunden (Zahl kommt vom Server).
+    // Gastro und unbekannt/degradiert = der bisherige Text; andere Branchen =
+    // neutrale Formulierung — dahinter steht kein L-GAV, und Rechtswerte werden
+    // hier keine erfunden (Zahl kommt vom Server). Seit 24.09.2026 «Min.» mit
+    // Punkt wie im Stundenformat («45 Min.»).
     pauseHintText(day) {
       const req = (day && day.requiredBreak != null) ? day.requiredBreak : '';
-      if (this.istNichtGastro) return `unter dem Minimum (${req} Min)`;
-      return `unter Minimum (${req} Min)`;
+      if (this.istNichtGastro) return `unter dem Minimum (${req} Min.)`;
+      return `unter Minimum (${req} Min.)`;
     },
     rowClass(day) {
       const classes = [];
@@ -1070,7 +1123,7 @@ export default {
 .ze-action-cell { white-space: nowrap; }
 .ze-row-error   { max-width: 100px; white-space: normal; }
 .ze-row-error__icon { display: inline-block; vertical-align: -3px; margin-right: var(--hrk-space-1); }
-.ze-saved { display: inline-flex; }
+.ze-saved { display: inline-flex; align-items: center; gap: var(--hrk-space-1); }
 
 /* Total-Zeile */
 .ze-total-row td { font-weight: var(--hrk-fw-semibold); border-top: 2px solid var(--hrk-border-strong); border-bottom: none; }
@@ -1097,5 +1150,28 @@ export default {
   .ze-input-time  { max-width: 80px; }
   .ze-input-note  { min-width: 80px; }
   .ze-input-small { width: 56px; }
+}
+/* S5-B11/S5-B02-Teil (Vollaudit 23.09.2026): Unter 768px ist die Wochentabelle breiter als der
+   Bildschirm. Die Speichern-Spalte klebt darum am rechten Rand der Tabelle: Speichern und das
+   Haekchen sind ohne seitliches Wischen erreichbar. (Tag-Karten statt Tabelle = Projekt G3.) */
+@media (max-width: 768px) {
+  .ze-table .ze-col-action,
+  .ze-table .ze-action-cell {
+    position: sticky; right: 0; z-index: 1;
+    background: var(--hrk-surface);
+    box-shadow: -1px 0 0 var(--hrk-border);
+  }
+  .ze-table thead .ze-col-action { background: var(--hrk-surface-muted); }
+  .ze-row--today .ze-action-cell { background: var(--hrk-schiefer-soft); }
+  .ze-table .ze-save-btn { padding: 0 var(--hrk-space-2); }
+}
+/* Am Handy nur das Haekchen zeigen (schmale Klebespalte); «Gespeichert» bleibt fuer
+   Screenreader im Text und im aria-label des Knopfs. */
+@media (max-width: 600px) {
+  .ze-saved__text {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  .ze-table .ze-save-btn { min-width: var(--hrk-tap-min); }
 }
 </style>

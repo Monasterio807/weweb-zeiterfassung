@@ -16,7 +16,7 @@ liest/schreibt `time_entries` über Supabase REST (Anon-Key + User-JWT, RLS sch�
 | `authToken` | Text | User-JWT (Supabase Auth). Wird live gelesen: Prop → wwLib-Auth-Kontext → localStorage; bei 401 GoTrue-Refresh + Retry. |
 | `apiKey` | Text | Anon-/Publishable-Key. Nie `service_role`. |
 | `supabaseUrl` | Text | Default Imploya Zürich (`ztvqsxdudzdyqgeylujr`). |
-| `employeeId` | Text | Optional: Mitarbeiter vorwählen (UUID). Leer → Auswahl im Widget. |
+| `employeeId` | Text | Optional: Mitarbeiter vorwählen (UUID). Leer → Auswahl im Widget; dann gilt auch `?mitarbeiter=<uuid>` aus der URL, sofern die Person in der eigenen Liste steht. |
 | `weekOffset` | Number | 0 = aktuelle Woche, −1 = Vorwoche. Navigation überschreibt intern. |
 | `readonly` | OnOff | Nur lesen. |
 | `aboUrl` | Text | Ziel des «Zum Abo»-Buttons im Zusatzmodul-Hinweis. Default `/abo`. |
@@ -43,6 +43,15 @@ ab (User-ID aus dem JWT-`sub`-Claim, kein Zusatz-Request). Der Kill-Switch
 - **Fail-open:** Netzfehler beim Gate-Check zeigen keinen Banner — die RLS bleibt die echte Sperre.
 - **403 beim Anlegen:** wird zuerst gegen das Gate re-gecheckt, damit kein irreführendes
   «Bitte neu anmelden» erscheint.
+
+## Fix-Runde Vollaudit Kundensicht (24.09.2026, Bündel F24)
+
+- Gespeicherte Zeilen zeigen das Häkchen mit «Gespeichert», bis die Zeile wieder geändert wird
+  (auch beim Laden der Woche). Kein 3-Sekunden-Timeout mehr.
+- Stunden als «7 Std. 45 Min.», «7 Std.», «45 Min.», Null «0 Std.» (gleich wie dienstplan).
+- Unter 768 px klebt die Speichern-Spalte am rechten Rand: Speichern ohne seitliches Wischen.
+  Tag-Karten statt Tabelle sind ein eigenes Projekt (G3).
+- `?mitarbeiter=<uuid>` wählt die Person vor (nur UUID-Format, nur aus der eigenen Liste).
 
 ## Sicherheit
 
