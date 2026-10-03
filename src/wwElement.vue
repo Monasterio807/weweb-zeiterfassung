@@ -961,7 +961,7 @@ export default {
   --hrk-radius-pill: 6px;
   --hrk-shadow-card: 0 1px 2px rgba(40,35,30,.05);
   --hrk-shadow-pop: 0 1px 2px rgba(40,35,30,.05);
-  --hrk-focus-ring: 0 0 0 3px rgba(51,71,91,.35);
+  --hrk-focus-ring: 0 0 0 2px var(--hrk-surface), 0 0 0 4px var(--hrk-bordeaux);
   --hrk-tap-min: 44px;
   --hrk-page-max: 880px;
   /* Design-Umsetzung 23.09.2026 (Phase 1): Schiefer, Schriften, zwei Radien, ein Schatten */
@@ -1009,8 +1009,8 @@ export default {
 .hrk-btn:focus-visible { outline: none; box-shadow: var(--hrk-focus-ring); }
 .hrk-btn--primary   { background: var(--hrk-bordeaux); color: var(--hrk-on-primary); }
 .hrk-btn--primary:hover { background: var(--hrk-bordeaux-dark); }
-.hrk-btn--secondary { background: var(--hrk-surface); color: var(--hrk-schiefer); border-color: var(--hrk-border-strong); }
-.hrk-btn--secondary:hover { background: var(--hrk-schiefer-soft); }
+.hrk-btn--secondary { background: var(--hrk-surface); color: var(--hrk-bordeaux); border-color: var(--hrk-border-strong); }
+.hrk-btn--secondary:hover { background: var(--hrk-bordeaux-soft); border-color: var(--hrk-bordeaux); }
 .hrk-btn--ghost     { background: transparent; color: var(--hrk-schiefer); }
 .hrk-btn--ghost:hover { background: var(--hrk-schiefer-soft); }
 .hrk-btn[disabled]  { opacity: .5; cursor: not-allowed; }
@@ -1021,7 +1021,7 @@ export default {
   font: inherit; color: var(--hrk-text); background: var(--hrk-surface);
   border: 1px solid var(--hrk-border-strong); border-radius: var(--hrk-radius-field);
 }
-.hrk-input:focus, .hrk-select:focus { outline: none; border-color: var(--hrk-schiefer); box-shadow: var(--hrk-focus-ring); }
+.hrk-input:focus, .hrk-select:focus { outline: none; border-color: var(--hrk-bordeaux); box-shadow: var(--hrk-focus-ring); }
 .hrk-card {
   background: var(--hrk-surface); border: 1px solid var(--hrk-border);
   border-radius: var(--hrk-radius-card); box-shadow: var(--hrk-shadow); padding: var(--hrk-space-5);
