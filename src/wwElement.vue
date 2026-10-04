@@ -730,7 +730,7 @@ export default {
         const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
         if (seq !== this._weekSeq) return;
         if (res.status === 401 || res.status === 403) { this.authError = true; return; }
-        if (!res.ok) { this.globalError = 'Wochendaten konnten nicht geladen werden.'; return; }
+        if (!res.ok) { this.globalError = 'Wochendaten konnten nicht geladen werden. Lade die Seite neu.'; return; }
 
         const entries = await res.json().catch(() => []);
         if (seq !== this._weekSeq) return;
@@ -763,7 +763,7 @@ export default {
         this.emit('loaded', { count: Object.keys(byDate).length });
       } catch (e) {
         if (seq !== this._weekSeq) return;
-        this.globalError = 'Netzwerkfehler beim Laden der Woche.';
+        this.globalError = 'Keine Verbindung beim Laden der Woche. Versuch es gleich nochmal.';
         this.emit('error', { reason: 'network' });
       } finally {
         if (seq === this._weekSeq) this.loading = false;
@@ -858,7 +858,7 @@ export default {
         this.emit('saved', { date: day.date, worked_minutes: (row && row.worked_minutes) || 0 });
 
       } catch (e) {
-        day.error = 'Netzwerkfehler. Versuch es gleich nochmal.';
+        day.error = 'Keine Verbindung. Versuch es gleich nochmal.';
         this.emit('error', { reason: 'network' });
       } finally {
         day.saving = false;
