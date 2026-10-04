@@ -623,6 +623,11 @@ export default {
       if (!start || !datum) return '';
       return String(datum).slice(0, 10) < start ? start : '';
     },
+    // ISO-Datum (JJJJ-MM-TT) als TT.MM.JJJJ. saveDay rief bisher eine Methode auf, die es nicht gab.
+    fmtDatum(iso) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+      return m ? `${m[3]}.${m[2]}.${m[1]}` : String(iso || '');
+    },
     onEmployeeChange() {
       this.loadWeek();
     },
