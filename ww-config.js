@@ -37,7 +37,7 @@ export default {
       bindable: true,
       defaultValue: 'https://ztvqsxdudzdyqgeylujr.supabase.co',
       /* wwEditor:start */
-      bindingValidation: { type: 'string', tooltip: 'Projekt-URL. Default ist das Imploya-Projekt (Zürich).' },
+      bindingValidation: { type: 'string', tooltip: 'Projekt-URL. Default ist das imploya-Projekt (Zürich).' },
       /* wwEditor:end */
     },
     employeeId: {

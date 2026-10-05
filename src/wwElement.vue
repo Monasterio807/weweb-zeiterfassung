@@ -229,7 +229,7 @@
 
 <script>
 /**
- * WeWeb Coded Component — Zeiterfassung Wochenansicht (Imploya)
+ * WeWeb Coded Component — Zeiterfassung Wochenansicht (imploya)
  * Zeigt eine editierbare Wochenübersicht (Mo–So) pro Mitarbeiter:in.
  * Liest/schreibt time_entries über Supabase REST (Anon-Key + User-JWT).
  * RLS schützt die Daten — nur der eigene Betrieb ist sichtbar.
