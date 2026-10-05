@@ -339,7 +339,7 @@ export default {
       const tage = this.weekDays.length ? this.weekDays : this.buildEmptyWeek();
       const first = tage[0];
       const last  = tage[6];
-      return `${first.label} – ${last.label} ${first.year}`;
+      return `${first.label} – ${last.label} ${last.year}`;
     },
     weekTotal() {
       let total = 0;
@@ -540,7 +540,7 @@ export default {
         const url = `${this.baseUrl}/rest/v1/rpc/get_user_employees?select=id,firstname,lastname,employment_start&order=lastname.asc`;
         const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
         if (res.status === 401 || res.status === 403) { this.authError = true; return; }
-        if (!res.ok) return;
+        if (!res.ok) { this.globalError = 'Mitarbeitende konnten nicht geladen werden. Versuch es gleich nochmal.'; return; }
         const rows = await res.json().catch(() => []);
         this.employees = Array.isArray(rows) ? rows : [];
         this.emit('loaded', { count: this.employees.length });
@@ -551,7 +551,7 @@ export default {
           }));
         }
       } catch (e) {
-        /* Ladeliste optional — kein globalError */
+        this.globalError = 'Mitarbeitende konnten nicht geladen werden. Versuch es gleich nochmal.';
       } finally {
         this.empLoading = false;
       }
@@ -847,6 +847,12 @@ export default {
 
         const rows = await res.json().catch(() => []);
         const row  = Array.isArray(rows) ? rows[0] : rows;
+        if (!row) {
+          // A1-06-004: leere Antwort = keine Zeile geaendert/angelegt. Eingaben bleiben stehen.
+          day.error = 'Es wurde keine Zeile gespeichert. Lade die Seite neu und versuch es nochmal.';
+          this.emit('error', { reason: 'save' });
+          return;
+        }
         if (row) {
           day.entryId       = row.id || day.entryId;
           day.workedMinutes = row.worked_minutes || null;
@@ -876,7 +882,8 @@ export default {
       const [eh, em] = day.end.split(':').map(Number);
       let startMin = sh * 60 + sm;
       let endMin   = eh * 60 + em;
-      if (endMin <= startMin) endMin += 24 * 60; // Nachtschicht
+      if (endMin === startMin) return null; // Start gleich Ende: vermutlich Tippfehler, keine 24 Std.
+      if (endMin < startMin) endMin += 24 * 60; // Nachtschicht
       return Math.max(0, endMin - startMin - (day.pause || 0));
     },
     // Stundenformat (S5-B13, Vollaudit 23.09.2026, gleich in dienstplan und compliance-cockpit):
