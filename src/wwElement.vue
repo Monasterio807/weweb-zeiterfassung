@@ -939,12 +939,12 @@ export default {
 <style scoped>
 /* ── Design-Tokens ── */
 :root, .hrk-root {
-  --hrk-bordeaux:        #7B2D3B;
-  --hrk-bordeaux-dark:   #5E2129;
-  --hrk-bordeaux-soft:   #F3E7E9;
+  --hrk-bordeaux:        #72323C;
+  --hrk-bordeaux-dark:   #5A2630;
+  --hrk-bordeaux-soft:   #F1E7E9;
   --hrk-creme: #F7F5F1;
   --hrk-anthrazit: #241F1C;
-  --hrk-gold:            #C9A24B;
+  --hrk-gold:            #C3A359;
   --hrk-on-primary:      #FFFFFF;  /* Text/Icons auf primaer (Bordeaux) gefaerbten Flaechen */
   --hrk-surface:         #FFFFFF;
   --hrk-surface-muted: #F2EFEA;
@@ -987,7 +987,7 @@ export default {
   --hrk-on-dark-faint: rgba(255,255,255,.12);
   --hrk-overlay: rgba(20,24,28,.55);
   --hrk-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --hrk-font-brand: "Fraunces", Georgia, serif;
+  --hrk-font-brand: "Gloock", Georgia, serif;
   --hrk-fs-xs: 0.8125rem;
   --hrk-ls-caps: .06em;
   --hrk-radius-field: 6px;
