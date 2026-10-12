@@ -78,7 +78,7 @@
 
         <!-- Kein Mitarbeiter gewählt -->
         <div v-else-if="!selectedEmployee" class="hrk-state hrk-state--mini">
-          <p class="hrk-muted">Wähl oben eine mitarbeitende Person, um die Woche anzuzeigen.</p>
+          <p class="hrk-muted">Wähle oben eine mitarbeitende Person, um die Woche anzuzeigen.</p>
         </div>
 
         <!-- Wochentabelle -->
@@ -540,7 +540,7 @@ export default {
         const url = `${this.baseUrl}/rest/v1/rpc/get_user_employees?select=id,firstname,lastname,employment_start&order=lastname.asc`;
         const res = await this.authedFetch(url, { headers: { Accept: 'application/json' } });
         if (res.status === 401 || res.status === 403) { this.authError = true; return; }
-        if (!res.ok) { this.globalError = 'Mitarbeitende konnten nicht geladen werden. Versuch es gleich nochmal.'; return; }
+        if (!res.ok) { this.globalError = 'Mitarbeitende konnten nicht geladen werden. Versuche es gleich nochmal.'; return; }
         const rows = await res.json().catch(() => []);
         this.employees = Array.isArray(rows) ? rows : [];
         this.emit('loaded', { count: this.employees.length });
@@ -551,7 +551,7 @@ export default {
           }));
         }
       } catch (e) {
-        this.globalError = 'Mitarbeitende konnten nicht geladen werden. Versuch es gleich nochmal.';
+        this.globalError = 'Mitarbeitende konnten nicht geladen werden. Versuche es gleich nochmal.';
       } finally {
         this.empLoading = false;
       }
@@ -763,7 +763,7 @@ export default {
         this.emit('loaded', { count: Object.keys(byDate).length });
       } catch (e) {
         if (seq !== this._weekSeq) return;
-        this.globalError = 'Keine Verbindung beim Laden der Woche. Versuch es gleich nochmal.';
+        this.globalError = 'Keine Verbindung beim Laden der Woche. Versuche es gleich nochmal.';
         this.emit('error', { reason: 'network' });
       } finally {
         if (seq === this._weekSeq) this.loading = false;
@@ -849,7 +849,7 @@ export default {
         const row  = Array.isArray(rows) ? rows[0] : rows;
         if (!row) {
           // A1-06-004: leere Antwort = keine Zeile geaendert/angelegt. Eingaben bleiben stehen.
-          day.error = 'Es wurde keine Zeile gespeichert. Lade die Seite neu und versuch es nochmal.';
+          day.error = 'Es wurde keine Zeile gespeichert. Lade die Seite neu und versuche es nochmal.';
           this.emit('error', { reason: 'save' });
           return;
         }
@@ -864,7 +864,7 @@ export default {
         this.emit('saved', { date: day.date, worked_minutes: (row && row.worked_minutes) || 0 });
 
       } catch (e) {
-        day.error = 'Keine Verbindung. Versuch es gleich nochmal.';
+        day.error = 'Keine Verbindung. Versuche es gleich nochmal.';
         this.emit('error', { reason: 'network' });
       } finally {
         day.saving = false;
