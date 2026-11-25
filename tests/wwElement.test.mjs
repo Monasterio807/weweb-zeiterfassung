@@ -70,7 +70,8 @@ test("Nachbesserung: Merkstand ist der gesendete Stand, nicht der Stand nach dem
   assert.match(day.hinweis, /Zeit anpassen/);
 });
 test("Nachbesserung: Eintritts-Hinweis und Stempel-Hinweis stehen zusammen", async () => {
-  const vm = makeVm({ selectedEmployee: "emp1", vorEintritt: () => "2026-11-30" });
+  const vm = makeVm({ selectedEmployee: "emp1" });
+  vm.vorEintritt = () => "2026-11-30"; // makeVm bindet die Methoden nach `over`, darum hier setzen
   vm.authedFetch = async () => okRes({ id: "e1", worked_minutes: 450 });
   const day = tag({}); vm.markiereGeladen(day);
   day.end = "16:00";
