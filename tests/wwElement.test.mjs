@@ -32,7 +32,7 @@ test("G6-24: Zeit eines Stempel-Eintrags ändern -> Hinweis auf «Zeit anpassen�
   const vm = makeVm({ selectedEmployee: "emp1", vorEintritt: () => null });
   vm.authedFetch = async () => okRes({ id: "e1", worked_minutes: 450 });
   const day = tag({});
-  vm.markiereGeladen?.(day);           // Stand wie nach dem Laden
+  vm.markiereGeladen(day);           // Stand wie nach dem Laden
   day.end = "16:00";
   await vm.saveDay(day);
   assert.equal(day.error, "");
@@ -42,11 +42,40 @@ test("G6-24: Zeit eines Stempel-Eintrags ändern -> Hinweis auf «Zeit anpassen�
 test("G6-24: nur Notiz geändert oder Eintrag von Hand -> kein Hinweis", async () => {
   const vm = makeVm({ selectedEmployee: "emp1", vorEintritt: () => null });
   vm.authedFetch = async () => okRes({ id: "e1", worked_minutes: 480 });
-  const d1 = tag({}); vm.markiereGeladen?.(d1); d1.note = "Inventur";
+  const d1 = tag({}); vm.markiereGeladen(d1); d1.note = "Inventur";
   await vm.saveDay(d1);
   assert.equal(d1.hinweis, "");
-  const d2 = tag({ source: "manual" }); vm.markiereGeladen?.(d2); d2.end = "16:00";
+  const d2 = tag({ source: "manual" }); vm.markiereGeladen(d2); d2.end = "16:00";
   await vm.saveDay(d2);
   assert.equal(d2.hinweis, "");
+});
+test("G6-24: Zeit unverändert (Stempel-Eintrag) -> kein Hinweis", async () => {
+  const vm = makeVm({ selectedEmployee: "emp1", vorEintritt: () => null });
+  vm.authedFetch = async () => okRes({ id: "e1", worked_minutes: 480 });
+  const day = tag({}); vm.markiereGeladen(day);
+  await vm.saveDay(day);
+  assert.equal(day.hinweis, "");
+});
+test("Nachbesserung: Merkstand ist der gesendete Stand, nicht der Stand nach dem Request", async () => {
+  const vm = makeVm({ selectedEmployee: "emp1", vorEintritt: () => null });
+  const day = tag({}); vm.markiereGeladen(day);
+  day.end = "16:00";
+  vm.authedFetch = async () => { day.end = "15:00"; return okRes({ id: "e1", worked_minutes: 450 }); }; // tippt weiter während des Sendens
+  await vm.saveDay(day);
+  assert.equal(day.stempelSig, "08:00|16:00|30", "Merkstand = gesendeter Stand");
+  assert.equal(day.saved, false, "Zeile wurde seit dem Senden geändert");
+  // Zweiter Speichervorgang mit der neuen Zeit: wieder Hinweis, weil 15:00 noch nie gespeichert war
+  vm.authedFetch = async () => okRes({ id: "e1", worked_minutes: 390 });
+  await vm.saveDay(day);
+  assert.match(day.hinweis, /Zeit anpassen/);
+});
+test("Nachbesserung: Eintritts-Hinweis und Stempel-Hinweis stehen zusammen", async () => {
+  const vm = makeVm({ selectedEmployee: "emp1", vorEintritt: () => "2026-11-30" });
+  vm.authedFetch = async () => okRes({ id: "e1", worked_minutes: 450 });
+  const day = tag({}); vm.markiereGeladen(day);
+  day.end = "16:00";
+  await vm.saveDay(day);
+  assert.match(day.hinweis, /vor dem Eintritt am 30\.11\.2026/);
+  assert.match(day.hinweis, /Zeit anpassen/);
 });
 test("Texte: kein scharfes s", () => { assert.ok(!/ß/.test(sfc)); });

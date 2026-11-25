@@ -809,7 +809,8 @@ export default {
       const gesendet = this.daySig(day);
       // G6-24: Ändert der Chef die Zeiten eines Stempel-Eintrags, geht das ohne Begründung durch.
       // Das Backend vermerkt die Änderung (manuell_korrigiert_am, Protokoll), nimmt hier aber keinen Grund an.
-      const stempelGeaendert = !!day.entryId && day.source === 'clock' && this.zeitSig(day) !== day.stempelSig;
+      const gesendetZeit = this.zeitSig(day); // Merkstand nach dem Speichern = gesendeter Stand, nicht der Stand nach dem Request
+      const stempelGeaendert = !!day.entryId && day.source === 'clock' && gesendetZeit !== day.stempelSig;
 
       try {
         let res;
@@ -869,9 +870,10 @@ export default {
         // W1: nur, wenn die Zeile seit dem Senden unveraendert ist.
         day.saved = this.daySig(day) === gesendet;
         if (stempelGeaendert) {
-          day.hinweis = 'Diese Zeit kam von der Stempeluhr. Deine Änderung ist gespeichert, aber ohne Begründung. Willst du einen Grund festhalten, geht das unter «Freigaben» mit «Zeit anpassen».';
+          const stempelHinweis = 'Diese Zeit kam von der Stempeluhr. Deine Änderung ist gespeichert, aber ohne Begründung. Willst du einen Grund festhalten, geht das unter «Freigaben» mit «Zeit anpassen».';
+          day.hinweis = day.hinweis ? `${day.hinweis} ${stempelHinweis}` : stempelHinweis;
         }
-        this.markiereGeladen(day);
+        day.stempelSig = gesendetZeit;
         this.emit('saved', { date: day.date, worked_minutes: (row && row.worked_minutes) || 0 });
 
       } catch (e) {
