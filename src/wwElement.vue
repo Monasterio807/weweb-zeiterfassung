@@ -869,7 +869,7 @@ export default {
         // W1: nur, wenn die Zeile seit dem Senden unveraendert ist.
         day.saved = this.daySig(day) === gesendet;
         if (stempelGeaendert) {
-          day.hinweis = 'Diese Zeit kam von der Stempeluhr. Du hast sie ohne Begründung geändert. Mit Begründung geht es unter «Freigaben» mit «Zeit anpassen».';
+          day.hinweis = 'Diese Zeit kam von der Stempeluhr. Deine Änderung ist gespeichert, aber ohne Begründung. Willst du einen Grund festhalten, geht das unter «Freigaben» mit «Zeit anpassen».';
         }
         this.markiereGeladen(day);
         this.emit('saved', { date: day.date, worked_minutes: (row && row.worked_minutes) || 0 });
