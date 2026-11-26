@@ -637,6 +637,9 @@ export default {
       day.error = '';
       day.hinweis = '';
     },
+    // G6-24: Stand der Zeiten (ohne Notiz) merken, wie sie geladen oder zuletzt gespeichert wurden.
+    zeitSig(day) { return [day.start || '', day.end || '', Number(day.pause) || 0].join('|'); },
+    markiereGeladen(day) { day.stempelSig = this.zeitSig(day); },
     // Inhalt einer Zeile als Vergleichswert (W1).
     daySig(day) {
       return [day.start || '', day.end || '', Number(day.pause) || 0, day.note || ''].join('|');
@@ -756,6 +759,7 @@ export default {
             day.requiredBreak  = (typeof e.required_break_minutes === 'number') ? e.required_break_minutes : null;
             // S5-B11 (Vollaudit 23.09.2026): was schon in der Datenbank steht, zeigt das Haekchen.
             day.saved          = true;
+            this.markiereGeladen(day);
           }
         });
 
@@ -803,6 +807,10 @@ export default {
       // Pruefung 24.09. (W1): Stand beim Senden merken. Wird waehrend des Requests weiter
       // getippt, darf der Erfolg kein «Gespeichert» zeigen — gespeichert ist nur, was gesendet wurde.
       const gesendet = this.daySig(day);
+      // G6-24: Ändert der Chef die Zeiten eines Stempel-Eintrags, geht das ohne Begründung durch.
+      // Das Backend vermerkt die Änderung (manuell_korrigiert_am, Protokoll), nimmt hier aber keinen Grund an.
+      const gesendetZeit = this.zeitSig(day); // Merkstand nach dem Speichern = gesendeter Stand, nicht der Stand nach dem Request
+      const stempelGeaendert = !!day.entryId && day.source === 'clock' && gesendetZeit !== day.stempelSig;
 
       try {
         let res;
@@ -861,6 +869,11 @@ export default {
         // Frueher verschwand es nach 3 s, und man sah nicht mehr, welche Zeile gespeichert ist.
         // W1: nur, wenn die Zeile seit dem Senden unveraendert ist.
         day.saved = this.daySig(day) === gesendet;
+        if (stempelGeaendert) {
+          const stempelHinweis = 'Diese Zeit kam von der Stempeluhr. Deine Änderung ist gespeichert, aber ohne Begründung. Willst du einen Grund festhalten, geht das unter «Freigaben» mit «Zeit anpassen».';
+          day.hinweis = day.hinweis ? `${day.hinweis} ${stempelHinweis}` : stempelHinweis;
+        }
+        day.stempelSig = gesendetZeit;
         this.emit('saved', { date: day.date, worked_minutes: (row && row.worked_minutes) || 0 });
 
       } catch (e) {
